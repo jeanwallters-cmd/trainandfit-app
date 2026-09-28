@@ -372,21 +372,82 @@ function deleteWorkout(id) {
     showToast('האימון נמחק');
 }
 
+// שמירת מצב האימון הפעיל – אם האפליקציה נסגרת (החלקה בטעות, כיבוי ע"י המערכת) האימון משוחזר
+const ACTIVE_KEY = 'workout_active_session';
+const RESUME_MAX_AGE_MS = 3 * 60 * 60 * 1000;
+
+function saveSession() {
+    if (!activeWorkout) return;
+    try {
+        localStorage.setItem(ACTIVE_KEY, JSON.stringify({
+            workout: activeWorkout, currentSet, currentExIndex, currentPhase, timeLeft, savedAt: Date.now(),
+        }));
+    } catch (e) { /* storage full – ignore */ }
+}
+
+function clearSession() {
+    localStorage.removeItem(ACTIVE_KEY);
+}
+
+function isWorkoutActive() {
+    return !document.getElementById('activeWorkoutView').classList.contains('hidden');
+}
+
+function setPausedUI(paused) {
+    isPaused = paused;
+    const btn = document.getElementById('btnPause');
+    if (isPaused) {
+        btn.innerText = "המשך אימון";
+        btn.classList.remove('bg-white/20');
+        btn.classList.add('bg-amber-500', 'text-amber-950');
+    } else {
+        btn.innerText = "השהה";
+        btn.classList.remove('bg-amber-500', 'text-amber-950');
+        btn.classList.add('bg-white/20');
+    }
+}
+
+function showActiveView() {
+    document.getElementById('listView').classList.add('hidden');
+    document.getElementById('formView').classList.add('hidden');
+    document.getElementById('activeWorkoutView').classList.remove('hidden');
+    document.getElementById('activeName').innerText = activeWorkout.name;
+}
+
+function resumeSession() {
+    let s = null;
+    try { s = JSON.parse(localStorage.getItem(ACTIVE_KEY)); } catch (e) { /* ignore */ }
+    if (!s || !s.workout || !Array.isArray(s.workout.exercises) || !s.workout.exercises.length
+        || Date.now() - s.savedAt > RESUME_MAX_AGE_MS) {
+        clearSession();
+        return false;
+    }
+    activeWorkout = s.workout;
+    currentSet = s.currentSet;
+    currentExIndex = Math.min(s.currentExIndex, activeWorkout.exercises.length - 1);
+    currentPhase = s.currentPhase;
+    timeLeft = s.timeLeft;
+    requestWakeLock();
+    showActiveView();
+    setPausedUI(true);
+    updateWorkoutUI();
+    clearInterval(timerInterval);
+    timerInterval = setInterval(timerTick, 1000);
+    showToast('האימון שוחזר – לחץ "המשך אימון" כדי להמשיך');
+    return true;
+}
+
 function startWorkoutInit(id) {
     initAudio();
     requestWakeLock();
     activeWorkout = window.workouts.find(x => x.id === id);
     if (!activeWorkout || activeWorkout.exercises.length === 0) return;
 
-    document.getElementById('listView').classList.add('hidden');
-    document.getElementById('activeWorkoutView').classList.remove('hidden');
-
-    document.getElementById('activeName').innerText = activeWorkout.name;
+    showActiveView();
 
     currentSet = 1;
     currentExIndex = 0;
-    isPaused = false;
-    document.getElementById('btnPause').innerText = "השהה";
+    setPausedUI(false);
 
     // זמן הכנה ראשוני של 5 שניות
     currentPhase = 'prep';
@@ -481,6 +542,7 @@ function setPhase(newPhase, time) {
 }
 
 function updateWorkoutUI() {
+    saveSession();
     const currentEx = activeWorkout.exercises[currentExIndex];
 
     // עדכון תגים
@@ -565,21 +627,12 @@ function markRepDone() {
 }
 
 function togglePause() {
-    isPaused = !isPaused;
-    const btn = document.getElementById('btnPause');
-    if (isPaused) {
-        btn.innerText = "המשך אימון";
-        btn.classList.remove('bg-white/20');
-        btn.classList.add('bg-amber-500', 'text-amber-950');
-    } else {
-        btn.innerText = "השהה";
-        btn.classList.remove('bg-amber-500', 'text-amber-950');
-        btn.classList.add('bg-white/20');
-    }
+    setPausedUI(!isPaused);
 }
 
 function stopWorkout() {
     clearInterval(timerInterval);
+    clearSession();
     releaseWakeLock();
     isPaused = false;
     document.getElementById('activeWorkoutView').className = "hidden fixed inset-0 z-50 flex flex-col justify-between transition-colors duration-500 bg-slate-900 text-white pb-8";
@@ -588,6 +641,7 @@ function stopWorkout() {
 
 function finishWorkout() {
     clearInterval(timerInterval);
+    clearSession();
     releaseWakeLock();
     playSound('finish');
 
@@ -618,9 +672,10 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) rese
 // טעינה ראשונית של הרשימה
 renderList();
 updateExpiryNote();
+resumeSession();
 
 // פונקציות שנקראות מתוך ה-HTML (onclick)
 Object.assign(window, {
     toggleFullscreen, showList, openForm, addExerciseInput, toggleExType, saveWorkout,
-    deleteWorkout, startWorkoutInit, markRepDone, togglePause, stopWorkout,
+    deleteWorkout, startWorkoutInit, markRepDone, togglePause, stopWorkout, isWorkoutActive,
 });
