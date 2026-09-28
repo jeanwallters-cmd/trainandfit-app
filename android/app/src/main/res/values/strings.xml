@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">האימונים שלי</string>
+    <string name="title_activity_main">האימונים שלי</string>
+    <string name="package_name">com.trainandfit.app</string>
+    <string name="custom_url_scheme">com.trainandfit.app</string>
+</resources>

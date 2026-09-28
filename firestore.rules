@@ -1,0 +1,65 @@
+rules_version = '2';
+
+// כללי אבטחה – רק קוד שאושר ע"י המנהל יכול לקרוא/לכתוב נתוני אימונים בענן.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // מנהל = משתמש (אימייל+סיסמה) שיש לו מסמך ב-admins/{uid}
+    function isAdmin() {
+      return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function validCode(code) {
+      let c = /databases/$(database)/documents/sync_codes/$(code);
+      return exists(c) && get(c).data.active == true;
+    }
+
+    function str(v, max) {
+      return v is string && v.size() <= max;
+    }
+
+    match /admins/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if false; // נוצר ידנית ב-Firebase Console בלבד
+    }
+
+    // בקשות גישה: כל משתמש (אנונימי) יכול לשלוח בקשה ולראות רק את הבקשות שלו
+    match /access_requests/{id} {
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['uid', 'name', 'phone', 'email', 'message', 'status', 'createdAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt == request.time
+        && str(request.resource.data.name, 80) && request.resource.data.name.size() > 0
+        && request.resource.data.phone is string && request.resource.data.phone.matches('^[0-9]{10,15}$')
+        && str(request.resource.data.email, 120)
+        && str(request.resource.data.message, 500);
+      allow read: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+
+    // קודי ענן: מונפקים רק ע"י המנהל. אפשר לבדוק קוד בודד, אי אפשר לרשום את כולם.
+    match /sync_codes/{code} {
+      allow get: if signedIn();
+      allow list, write: if isAdmin();
+    }
+
+    // נתוני האימונים של כל קוד
+    match /workout_syncs/{code} {
+      allow read: if signedIn() && validCode(code);
+      allow write: if signedIn() && validCode(code)
+        && request.resource.data.keys().hasOnly(['workouts', 'updatedAt'])
+        && request.resource.data.workouts is list
+        && request.resource.data.workouts.size() <= 200;
+    }
+
+    // כל השאר חסום
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

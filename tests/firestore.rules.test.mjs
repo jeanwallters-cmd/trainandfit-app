@@ -1,0 +1,48 @@
+import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
+import { doc, getDoc, setDoc, addDoc, collection, getDocs, query, where, updateDoc, serverTimestamp } from 'firebase/firestore';
+import fs from 'fs';
+
+const env = await initializeTestEnvironment({ projectId: 'demo-test', firestore: { rules: fs.readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8'), host: '127.0.0.1', port: 8080 } });
+await env.withSecurityRulesDisabled(async (ctx) => {
+  const db = ctx.firestore();
+  await setDoc(doc(db, 'admins/ADMIN'), { x: 1 });
+  await setDoc(doc(db, 'sync_codes/GOODCODE'), { active: true });
+  await setDoc(doc(db, 'sync_codes/OFFCODE1'), { active: false });
+});
+const user = env.authenticatedContext('USER1').firestore();
+const other = env.authenticatedContext('USER2').firestore();
+const admin = env.authenticatedContext('ADMIN', { email: 'a@b.c' }).firestore();
+const anon = env.unauthenticatedContext().firestore();
+let pass = 0, fail = 0;
+const t = async (name, p) => { try { await p; pass++; console.log('✓', name); } catch (e) { fail++; console.log('✗', name, e.message); } };
+const req = { uid: 'USER1', name: 'Dan', phone: '972501234567', email: 'd@x.com', message: 'hi', status: 'pending', createdAt: serverTimestamp() };
+
+let ref;
+await t('user creates request', (async () => { ref = await assertSucceeds(addDoc(collection(user, 'access_requests'), req)); })());
+await t('cannot create approved request', assertFails(addDoc(collection(user, 'access_requests'), { ...req, status: 'approved' })));
+await t('cannot create request for other uid', assertFails(addDoc(collection(user, 'access_requests'), { ...req, uid: 'X' })));
+await t('cannot add extra fields (code)', assertFails(addDoc(collection(user, 'access_requests'), { ...req, code: 'GOODCODE' })));
+await t('bad phone rejected', assertFails(addDoc(collection(user, 'access_requests'), { ...req, phone: 'abc' })));
+await t('unauthenticated cannot create', assertFails(addDoc(collection(anon, 'access_requests'), req)));
+await t('owner reads own request', assertSucceeds(getDoc(doc(user, 'access_requests', ref.id))));
+await t('other user cannot read request', assertFails(getDoc(doc(other, 'access_requests', ref.id))));
+await t('user cannot approve own request', assertFails(updateDoc(doc(user, 'access_requests', ref.id), { status: 'approved' })));
+await t('user cannot list requests', assertFails(getDocs(collection(user, 'access_requests'))));
+await t('admin lists pending', assertSucceeds(getDocs(query(collection(admin, 'access_requests'), where('status', '==', 'pending')))));
+await t('admin approves', assertSucceeds(updateDoc(doc(admin, 'access_requests', ref.id), { status: 'approved', code: 'NEWCODE1' })));
+await t('user cannot create code', assertFails(setDoc(doc(user, 'sync_codes/HACKCODE'), { active: true })));
+await t('admin creates code', assertSucceeds(setDoc(doc(admin, 'sync_codes/NEWCODE1'), { active: true })));
+await t('user can check a code', assertSucceeds(getDoc(doc(user, 'sync_codes/GOODCODE'))));
+await t('user cannot list codes', assertFails(getDocs(collection(user, 'sync_codes'))));
+await t('user writes with valid code', assertSucceeds(setDoc(doc(user, 'workout_syncs/GOODCODE'), { workouts: [{ id: 1 }], updatedAt: 'x' })));
+await t('other device reads with valid code', assertSucceeds(getDoc(doc(other, 'workout_syncs/GOODCODE'))));
+await t('write with unknown code denied', assertFails(setDoc(doc(user, 'workout_syncs/RANDOM12'), { workouts: [], updatedAt: 'x' })));
+await t('write with revoked code denied', assertFails(setDoc(doc(user, 'workout_syncs/OFFCODE1'), { workouts: [], updatedAt: 'x' })));
+await t('read with revoked code denied', assertFails(getDoc(doc(user, 'workout_syncs/OFFCODE1'))));
+await t('unauthenticated read denied', assertFails(getDoc(doc(anon, 'workout_syncs/GOODCODE'))));
+await t('user reads own admin doc -> not exists ok', assertSucceeds(getDoc(doc(user, 'admins/USER1'))));
+await t('user cannot make self admin', assertFails(setDoc(doc(user, 'admins/USER1'), { x: 1 })));
+await t('legacy path closed', assertFails(getDoc(doc(user, 'artifacts/workout-builder-app/public/data/workout_syncs/ABC'))));
+console.log(`\n${pass} passed, ${fail} failed`);
+await env.cleanup();
+process.exit(fail ? 1 : 0);

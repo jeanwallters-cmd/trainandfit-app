@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>אישור קודי ענן</title>
+    <link rel="icon" href="./icon.svg" type="image/svg+xml">
+</head>
+<body class="min-h-screen text-slate-800 pb-20">
+    <div class="max-w-md mx-auto p-4 sm:p-6">
+        <div class="text-center mb-6 mt-4">
+            <h1 class="text-3xl font-black text-slate-900 mb-2">אישור קודי ענן</h1>
+            <p class="text-slate-500 text-sm">ניהול בקשות גישה לגיבוי בענן</p>
+        </div>
+
+        <!-- התחברות מנהל -->
+        <form id="loginView" class="hidden bg-white rounded-3xl shadow-xl p-6 space-y-4" onsubmit="adminLogin(event)">
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">אימייל</label>
+                <input type="email" id="loginEmail" required dir="ltr" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">סיסמה</label>
+                <input type="password" id="loginPassword" required dir="ltr" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <button type="submit" class="w-full bg-slate-900 hover:bg-black text-white font-bold py-4 rounded-2xl shadow-lg transition-all active:scale-95">התחבר</button>
+        </form>
+
+        <!-- משתמש שאינו מנהל -->
+        <div id="notAdminView" class="hidden bg-amber-50 border border-amber-200 rounded-2xl p-5 space-y-3 text-center">
+            <h3 class="font-bold text-amber-800">החשבון עדיין לא מוגדר כמנהל</h3>
+            <p class="text-xs text-amber-700">ב-Firebase Console → Firestore צור אוסף <b dir="ltr">admins</b> ובו מסמך שהמזהה שלו הוא:</p>
+            <div id="myUid" dir="ltr" class="bg-white border-2 border-dashed border-amber-400 py-2 px-3 rounded-xl font-mono text-sm font-bold break-all select-all"></div>
+            <button onclick="adminLogout()" class="text-xs font-semibold text-slate-500">התנתק</button>
+        </div>
+
+        <!-- לוח מנהל -->
+        <div id="adminView" class="hidden space-y-6">
+            <div id="focusedRequest"></div>
+
+            <div>
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-lg font-bold text-slate-900">בקשות ממתינות</h2>
+                    <button onclick="adminLogout()" class="text-xs font-semibold text-slate-400 hover:text-slate-600">התנתק</button>
+                </div>
+                <div id="pendingList" class="space-y-4"></div>
+            </div>
+
+            <div>
+                <h2 class="text-lg font-bold text-slate-900 mb-3">קודים שהונפקו</h2>
+                <div id="codesList" class="space-y-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toastNotification" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white text-xs font-semibold py-3 px-6 rounded-2xl shadow-xl transition-all duration-300">
+        <span id="toastText">הודעה</span>
+    </div>
+
+    <script type="module" src="/src/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#f8fafc">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="icon" href="./icon.svg" type="image/svg+xml">
+    <title>בונה האימונים שלי</title>
+</head>
+<body class="min-h-screen text-slate-800 pb-20">
+
+    <!-- סרגל כפתור מסך מלא ראשי -->
+    <div class="max-w-md mx-auto p-4 pb-0 flex justify-between items-center">
+        <!-- כפתור סנכרון ענן -->
+        <button onclick="openCloudModal()" class="bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold py-2 px-3 rounded-xl flex items-center gap-2 border border-slate-200 shadow-sm transition-all active:scale-95">
+            <div id="topCloudIndicator" class="cloud-indicator"></div>
+            <span id="topCloudText">סנכרון ענן</span>
+        </button>
+
+        <button onclick="toggleFullscreen()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold py-2 px-3 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+            </svg>
+            <span id="fsBtnText">מסך מלא</span>
+        </button>
+    </div>
+
+    <div id="listView" class="max-w-md mx-auto p-4 sm:p-6 transition-all duration-300">
+        <div class="text-center mb-8 mt-4">
+            <h1 class="text-3xl font-black text-slate-900 mb-2">האימונים שלי</h1>
+            <p class="text-slate-500">צור, ערוך ונהל תוכניות אימון עם סנכרון בענן</p>
+        </div>
+
+        <button onclick="openForm()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 mb-8">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+            צור תוכנית אימון חדשה
+        </button>
+
+        <div id="workoutList" class="space-y-4">
+            <!-- כרטיסיות האימון יתווספו לכאן דינמית -->
+        </div>
+    </div>
+
+    <div id="formView" class="hidden max-w-lg mx-auto p-4 sm:p-6 transition-all duration-300 pb-20">
+        <div class="bg-white rounded-3xl shadow-xl overflow-hidden mb-12 max-h-[85vh] overflow-y-auto">
+            <div class="bg-slate-800 p-4 text-white text-center relative sticky top-0 z-10">
+                <button onclick="showList()" class="absolute right-4 top-4 text-slate-300 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+                <h2 id="formTitle" class="text-xl font-bold">יצירת אימון חדש</h2>
+            </div>
+            
+            <form id="workoutForm" onsubmit="saveWorkout(event)" class="p-4 sm:p-6 space-y-5">
+                <input type="hidden" id="editId" value="">
+                
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">שם האימון</label>
+                    <input type="text" id="wName" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm sm:text-base" placeholder="לדוג': אימון פלג גוף עליון">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">מטרת האימון</label>
+                    <input type="text" id="wGoal" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm sm:text-base" placeholder="לדוג': היפרטרופיה / סיבולת / כוח">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 sm:gap-4 pt-2 border-t border-slate-100">
+                    <div>
+                        <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1">כמות סטים לכל האימון</label>
+                        <input type="number" id="wSets" min="1" value="3" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-base sm:text-lg font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1">מנוחה בין סטים (שניות)</label>
+                        <input type="number" id="wSetRest" min="0" value="60" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-base sm:text-lg font-bold text-rose-600">
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-200">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-base font-bold text-slate-800">תרגילי האימון</h3>
+                        <span class="text-xs font-semibold text-slate-400">הגדר שמות ופרמטרים לכל תרגיל</span>
+                    </div>
+
+                    <div id="exerciseInputsContainer" class="space-y-3 mb-4 w-full">
+                        <!-- רשימת התרגילים בטופס -->
+                    </div>
+
+                    <button type="button" onclick="addExerciseInput()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl border-2 border-dashed border-slate-300 transition-all flex items-center justify-center gap-2 text-sm sm:text-base">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                        הוסף תרגיל לאימון
+                    </button>
+                </div>
+
+                <button type="submit" class="w-full bg-slate-900 hover:bg-black text-white font-bold py-4 px-6 rounded-2xl shadow-lg transition-all active:scale-95 mt-6 text-sm sm:text-base">
+                    שמור תוכנית אימון
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="activeWorkoutView" class="hidden fixed inset-0 z-50 flex flex-col justify-between transition-colors duration-500 bg-slate-900 text-white pb-8">
+        
+        <!-- Header -->
+        <div class="p-6 text-center pt-8">
+            <h2 id="activeName" class="text-xl font-bold opacity-80 uppercase mb-1">שם האימון</h2>
+            <div class="flex justify-center gap-3 text-sm font-semibold opacity-90 mt-2">
+                <span id="activeSetBadge" class="bg-black/30 px-4 py-1.5 rounded-full">סט 1 מתוך 3</span>
+                <span id="activeExIndexBadge" class="bg-black/30 px-4 py-1.5 rounded-full">תרגיל 1 מתוך 4</span>
+            </div>
+        </div>
+
+        <!-- Main Center -->
+        <div class="flex-1 flex flex-col items-center justify-center p-6 text-center">
+            
+            <div id="phaseTitle" class="text-2xl sm:text-3xl font-black mb-2 uppercase tracking-wide">זמן עבודה!</div>
+
+            <!-- תרגיל נוכחי -->
+            <div id="activeExerciseName" class="text-3xl sm:text-5xl font-extrabold mb-6 min-h-[3rem] drop-shadow-md text-yellow-300">
+                שם התרגיל
+            </div>
+            
+            <!-- שעון ספירה -->
+            <div class="relative w-64 h-64 sm:w-72 sm:h-72 bg-black/20 rounded-full flex items-center justify-center shadow-2xl backdrop-blur-md border-8 border-white/20 my-2">
+                <div id="mainTimer" class="text-7xl sm:text-8xl font-black timer-font drop-shadow-lg">00:00</div>
+            </div>
+
+            <!-- תרגיל הבא בתור -->
+            <div id="nextExerciseDisplay" class="text-base sm:text-lg font-medium opacity-90 mt-6 bg-black/20 px-6 py-2 rounded-xl">
+                הבא בתור: ...
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="p-6 max-w-md mx-auto w-full space-y-3">
+            <button id="btnDone" onclick="markRepDone()" class="hidden w-full bg-emerald-500 hover:bg-emerald-600 border-4 border-white/20 text-white font-black py-4 rounded-2xl shadow-lg transition-all active:scale-95 text-2xl mb-2">
+                בוצע! (עבור הלאה)
+            </button>
+            <button id="btnPause" onclick="togglePause()" class="w-full bg-white/20 hover:bg-white/30 backdrop-blur-md text-white font-bold py-4 rounded-2xl shadow-lg transition-all active:scale-95 text-xl">
+                השהה
+            </button>
+            <button onclick="stopWorkout()" class="w-full bg-black/40 hover:bg-black/50 backdrop-blur-md text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-95">
+                סיים אימון עכשיו
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal סנכרון ענן -->
+    <div id="cloudModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 text-slate-800 space-y-4 relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeCloudModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            
+            <div class="text-center space-y-1">
+                <div class="text-3xl">☁️</div>
+                <h3 class="text-xl font-bold text-slate-900">סנכרון ענן (תמידי לכל המכשירים)</h3>
+                <p class="text-xs text-slate-500">מאפשר שמירת תוכניות האימון בענן, לגישה ולסנכרון מכל מכשיר (סמארטפון או מחשב אחר).</p>
+            </div>
+            
+            <div id="cloudUnconnectedView" class="space-y-4 pt-2">
+                <button onclick="showRequestForm()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-2xl shadow-md transition-all active:scale-95 text-sm flex items-center justify-center gap-2">
+                    <span>צור גיבוי ענן חדש 🚀</span>
+                </button>
+                
+                <div class="relative flex py-1 items-center">
+                    <div class="flex-grow border-t border-slate-200"></div>
+                    <span class="flex-shrink mx-3 text-xs text-slate-400 font-semibold">או התחבר לגיבוי קיים</span>
+                    <div class="flex-grow border-t border-slate-200"></div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-xs font-semibold text-slate-600">הזן קוד סנכרון ממכשיר אחר:</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="existingSyncId" placeholder="קוד סנכרון..." dir="ltr" class="flex-1 min-w-0 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-center font-mono font-bold text-lg tracking-widest uppercase focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <button onclick="connectExistingSync('existingSyncId')" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2 rounded-xl text-sm transition-all active:scale-95">
+                            התחבר
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- בקשת גישה ליצירת קוד ענן -->
+            <form id="cloudRequestView" onsubmit="submitAccessRequest(event)" class="hidden space-y-3 pt-2">
+                <p class="text-xs text-slate-500 text-center">יצירת קוד ענן דורשת אישור. מלא את הפרטים והבקשה תישלח לאישור. לאחר האישור הקוד יישלח אליך במייל ובוואטסאפ.</p>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">שם מלא</label>
+                    <input type="text" id="reqName" required maxlength="80" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">מספר פלאפון (וואטסאפ)</label>
+                    <input type="tel" id="reqPhone" required dir="ltr" placeholder="05X-XXXXXXX" maxlength="20" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-center font-mono focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">אימייל</label>
+                    <input type="email" id="reqEmail" required dir="ltr" maxlength="120" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">הבקשה שלך</label>
+                    <textarea id="reqMessage" rows="2" maxlength="500" placeholder="לדוג': אני רוצה לסנכרן את האימונים בין הטלפון למחשב" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+                <button type="submit" id="reqSubmitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-2xl shadow-md transition-all active:scale-95 text-sm">
+                    שלח בקשה לאישור
+                </button>
+                <button type="button" onclick="openCloudModal()" class="w-full text-slate-500 hover:text-slate-700 font-semibold text-xs py-1">חזרה</button>
+            </form>
+
+            <!-- בקשה ממתינה -->
+            <div id="cloudPendingView" class="hidden space-y-4 text-center pt-2">
+                <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-2">
+                    <h4 id="pendingTitle" class="font-bold text-amber-800 text-base">הבקשה נשלחה ⏳</h4>
+                    <p id="pendingText" class="text-xs text-amber-700">ממתין לאישור. ברגע שהבקשה תאושר, קוד הענן יישלח אליך במייל ובוואטסאפ. הזן אותו כאן כדי להתחבר.</p>
+                </div>
+                <div class="flex gap-2">
+                    <input type="text" id="pendingSyncId" placeholder="קוד סנכרון..." dir="ltr" class="flex-1 min-w-0 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-center font-mono font-bold text-lg tracking-widest uppercase focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button onclick="connectExistingSync('pendingSyncId')" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2 rounded-xl text-sm transition-all active:scale-95">
+                        התחבר
+                    </button>
+                </div>
+                <button onclick="cancelAccessRequest()" class="text-slate-400 hover:text-slate-600 font-semibold text-xs">שלח בקשה חדשה</button>
+            </div>
+
+            <div id="cloudConnectedView" class="hidden space-y-4 text-center pt-2">
+                <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 space-y-2">
+                    <h4 class="font-bold text-emerald-800 text-base">המכשיר מסונכרן לענן ✅</h4>
+                    <p class="text-xs text-emerald-600">קוד הגיבוי האישי שלך:</p>
+                    <div onclick="copySyncId()" class="bg-white border-2 border-dashed border-emerald-400 py-3 px-4 rounded-xl font-mono text-2xl font-black text-emerald-700 tracking-widest cursor-pointer hover:bg-emerald-100/50 transition-colors" title="לחץ להעתקה">
+                        <span id="displaySyncId">------</span>
+                    </div>
+                    <p class="text-[11px] text-emerald-700">לחץ על הקוד להעתקה. הזן קוד זה במכשיר אחר כדי למשוך את האימונים.</p>
+                </div>
+                <button onclick="disconnectSync()" class="w-full bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold py-2.5 px-4 rounded-xl text-xs transition-all border border-rose-200">
+                    התנתק מהענן (המידע המקומי יישמר)
+                </button>
+            </div>
+
+            <button onclick="closeCloudModal()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-sm">
+                סגור
+            </button>
+        </div>
+    </div>
+
+    <!-- הודעות התראה פנימיות (חלופה ל-alert) -->
+    <div id="toastNotification" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white text-xs font-semibold py-3 px-6 rounded-2xl shadow-xl transition-all duration-300">
+        <span id="toastText">הודעה</span>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>

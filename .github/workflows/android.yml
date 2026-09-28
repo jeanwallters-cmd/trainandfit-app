@@ -1,0 +1,93 @@
+name: Android APK
+
+on:
+  push:
+    branches: [main, 'claude/**']
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      VERSION_CODE: ${{ github.run_number }}
+      VERSION_NAME: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('2.0.{0}', github.run_number) }}
+      HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Build web app and sync to Android
+        run: |
+          npm ci
+          npm run build
+          npx cap sync android
+
+      - name: Restore release keystore
+        if: env.HAS_KEYSTORE == 'true'
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/release.jks"
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+
+      - name: Build release-signed APK + AAB
+        if: env.HAS_KEYSTORE == 'true'
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          ./gradlew --no-daemon assembleRelease bundleRelease
+          APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          "$APKSIGNER" verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk
+          mkdir -p ../out
+          cp app/build/outputs/apk/release/app-release.apk "../out/TrainAndFit-$VERSION_NAME.apk"
+          cp app/build/outputs/bundle/release/app-release.aab "../out/TrainAndFit-$VERSION_NAME.aab"
+
+      - name: Build preview APK (no signing secrets yet)
+        if: env.HAS_KEYSTORE != 'true'
+        working-directory: android
+        run: |
+          echo "::warning::Signing secrets are missing - building an APK signed with the debug key. See SETUP.md."
+          ./gradlew --no-daemon assembleDebug
+          mkdir -p ../out
+          cp app/build/outputs/apk/debug/app-debug.apk "../out/TrainAndFit-$VERSION_NAME-preview.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trainandfit-android-${{ env.VERSION_NAME }}
+          path: out/*
+
+      # קישור הורדה קבוע: https://github.com/<owner>/<repo>/releases/tag/latest-apk
+      - name: Publish latest APK
+        if: github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest-apk --yes --cleanup-tag 2>/dev/null || true
+          if [ "$HAS_KEYSTORE" = "true" ]; then
+            NOTES="APK חתום (גרסה $VERSION_NAME, commit ${GITHUB_SHA::7})."
+          else
+            NOTES="APK תצוגה מקדימה חתום במפתח debug (גרסה $VERSION_NAME, commit ${GITHUB_SHA::7}). לחתימת release ראה SETUP.md."
+          fi
+          gh release create latest-apk out/*.apk --target "$GITHUB_SHA" --prerelease \
+            --title "האימונים שלי – Android ($VERSION_NAME)" --notes "$NOTES"
+
+      - name: Attach APK to version release
+        if: env.HAS_KEYSTORE == 'true' && startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: out/*.apk

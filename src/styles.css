@@ -1,0 +1,51 @@
+@import '@fontsource/rubik/400.css';
+@import '@fontsource/rubik/500.css';
+@import '@fontsource/rubik/600.css';
+@import '@fontsource/rubik/700.css';
+@import '@fontsource/rubik/900.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---- original app styles (unchanged) ---- */
+
+        body {
+            font-family: 'Rubik', sans-serif;
+            overflow-x: hidden;
+            background-color: #f8fafc;
+            transition: background-color 0.5s ease;
+        }
+        .timer-font {
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.05em;
+        }
+        .bg-work { background-color: #16a34a !important; } /* ירוק בולט */
+        .bg-rest { background-color: #dc2626 !important; } /* אדום בולט */
+        
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        .cloud-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #94a3b8;
+        }
+        .cloud-indicator.online { background-color: #22c55e; }
+        .cloud-indicator.syncing { background-color: #eab308; }
+        .cloud-indicator.error { background-color: #ef4444; }
+    
+/* ---- native app: keep content clear of the notch / status bar ---- */
+:root {
+    --sat: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+    --sab: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+}
+body { padding-top: var(--sat); }
+#activeWorkoutView { padding-top: var(--sat); padding-bottom: calc(2rem + var(--sab)); }
