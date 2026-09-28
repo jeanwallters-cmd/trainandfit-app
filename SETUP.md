@@ -1,61 +1,53 @@
 # מדריך הגדרה
 
-כל השירותים כאן **חינמיים**: Firebase (תוכנית Spark), EmailJS (עד 200 מיילים בחודש), CallMeBot (וואטסאפ אליך), GitHub Pages ו-GitHub Actions.
+כל השירותים כאן **חינמיים**: Firebase (תוכנית Spark), FormSubmit (מייל), CallMeBot (וואטסאפ), GitHub Pages ו-GitHub Actions.
 
 ---
 
-## 1. Firebase (פרויקט `pe-app-db`)
+## איך זה עובד
+1. משתמש לוחץ באפליקציה "צור גיבוי ענן חדש" וממלא שם, פלאפון, מייל ובקשה.
+2. **בו-זמנית** נשלחים אליך מייל ל-tamirmaidani@gmail.com והודעת וואטסאפ ל-052-8372666, עם פרטי המשתמש וקישור לפאנל הניהול.
+3. בפאנל הניהול (נפרד מהאפליקציה, רק אתה נכנס) יש כפתורי **📞 התקשר** ו-**💬 צ'אט בוואטסאפ** – מדברים עם האדם.
+4. רק אחרי שאתה לוחץ **"אשר והנפק קוד"** נוצר קוד, ואתה שולח אותו בלחיצה **בוואטסאפ** ו/או **במייל**.
+5. המשתמש מזין את הקוד ומקבל גישה קבועה. מהפאנל אפשר לבטל קוד בכל רגע, או להנפיק קוד ידנית בלי בקשה.
 
-1. [Firebase Console](https://console.firebase.google.com/project/pe-app-db) → **Authentication → Sign-in method**
-   - הפעל **Anonymous** (משמש את האפליקציה)
-   - הפעל **Email/Password** (משמש אותך בדף האישור)
-2. **Authentication → Users → Add user** – צור לעצמך משתמש (אימייל + סיסמה).
-3. **Firestore Database → Rules** – הדבק את כל התוכן של הקובץ `firestore.rules` ולחץ **Publish**.
-   > ⚠️ הכללים החדשים סוגרים את הנתיב הישן והפתוח (`artifacts/...`) שבו השתמשה גרסת ה-Web הקודמת. קודים ישנים לא יעבדו יותר – כל משתמש צריך לבקש קוד חדש.
-4. פתח את דף האישור (סעיף 4), התחבר עם המשתמש שיצרת. יופיע לך **המזהה (UID)** שלך.
-   ב-**Firestore → Start collection** צור אוסף בשם `admins`, ובתוכו מסמך שה-Document ID שלו הוא ה-UID הזה (אפשר להוסיף שדה כלשהו, למשל `name`). רענן את הדף – אתה מנהל.
+---
 
-## 2. מייל – EmailJS
+## 1. Firebase (פרויקט `pe-app-db`) – 3 דקות
 
-1. הירשם ב-[emailjs.com](https://www.emailjs.com) → **Email Services → Add service** (למשל Gmail) → העתק את ה-**Service ID**.
-2. **Email Templates → Create** – תבנית **"בקשה חדשה"** (נשלחת אליך):
-   - To Email: **המייל שלך**
-   - Subject: `בקשה חדשה לקוד ענן – {{name}}`
-   - Content:
-     ```
-     שם: {{name}}
-     טלפון: {{phone}}
-     מייל: {{email}}
-     בקשה: {{message}}
+1. [Firebase Console](https://console.firebase.google.com/project/pe-app-db) → **Authentication → Sign-in method**:
+   - הפעל **Anonymous** (האפליקציה)
+   - הפעל **Google** (הכניסה שלך לפאנל)
+2. **Authentication → Settings → Authorized domains → Add domain**: `jeanwallters-cmd.github.io`
+3. **Firestore Database → Rules** – הדבק את כל התוכן של `firestore.rules` ולחץ **Publish**.
+   > רק חשבון Google ‏tamirmaidani@gmail.com מוגדר כמנהל. אף אחד אחר לא יכול לאשר או להנפיק קודים.
+   >
+   > ⚠️ הכללים סוגרים את הנתיב הישן והפתוח (`artifacts/...`) של גרסת ה-Web הקודמת – קודים ישנים לא יעבדו, וכל משתמש צריך לבקש קוד חדש.
 
-     לאישור: {{approve_url}}
-     ```
-3. תבנית נוספת **"הקוד שלך"** (נשלחת למשתמש):
-   - To Email: `{{to_email}}`
-   - Subject: `קוד הענן שלך לאפליקציית האימונים`
-   - Content:
-     ```
-     שלום {{name}},
-     הבקשה שלך אושרה! קוד הענן שלך: {{code}}
-     באפליקציה: סנכרון ענן ← הזן את הקוד ← התחבר.
-     ```
-4. **Account → General** → העתק את ה-**Public Key**.
-5. מלא ב-`src/config.js` את `emailjs.publicKey`, `serviceId`, `adminTemplateId`, `userTemplateId`.
+## 2. מייל אליך – FormSubmit (בלי הרשמה)
 
-## 3. וואטסאפ – CallMeBot
+כבר מוגדר לשלוח ל-tamirmaidani@gmail.com. **בבקשה הראשונה** תקבל מ-FormSubmit מייל "Activate Form" – לחץ **Activate** פעם אחת. מאז כל בקשה מגיעה אליך למייל.
 
-1. היכנס ל-[CallMeBot WhatsApp](https://www.callmebot.com/blog/free-api-whatsapp-messages/), שמור את המספר של הבוט שמופיע שם באנשי הקשר, ושלח לו בוואטסאפ: `I allow callmebot to send me messages`
-2. הבוט יחזיר לך **apikey**.
-3. מלא ב-`src/config.js`: `callmebot.phone` (המספר שלך, למשל `972501234567`) ו-`callmebot.apiKey`.
+> אופציונלי: FormSubmit ישלח לך גם מחרוזת אקראית (alias). אפשר לשים אותה ב-`FORMSUBMIT_TARGET` ב-`src/config.js` במקום כתובת המייל, כדי שהמייל שלך לא יופיע בקוד הציבורי.
 
-**איך זה עובד:** כל בקשה חדשה שולחת אליך הודעת וואטסאפ אוטומטית עם פרטי המשתמש וקישור לאישור. אחרי שאתה מאשר, הקוד נשלח למשתמש **במייל אוטומטית**, ובוואטסאפ בלחיצה על "שלח את הקוד בוואטסאפ" (נפתחת הודעה מוכנה אליו בוואטסאפ שלך).
-> שליחת וואטסאפ אוטומטית ישירות למשתמש דורשת את WhatsApp Business API, שהוא בתשלום ודורש שרת. לכן שליחת הקוד למשתמש בוואטסאפ היא לחיצה אחת שלך.
+## 3. וואטסאפ אליך – בוט CallMeBot (הדרך החינמית היחידה בלי שרת)
 
-## 4. דף האישור ואתר ה-Web – GitHub Pages
+זה הצעד היחיד שרק אתה יכול לעשות, כי הבוט נותן מפתח רק לבעל המספר:
+1. פתח את [דף CallMeBot לוואטסאפ](https://www.callmebot.com/blog/free-api-whatsapp-messages/), שמור את מספר הבוט שמופיע שם באנשי הקשר בטלפון 052-8372666.
+2. שלח לו בוואטסאפ: `I allow callmebot to send me messages`
+3. תקבל תשובה עם **apikey** – שלח לי אותו (או הכנס אותו ב-`src/config.js` ← `callmebot.apiKey`).
+
+> שליחת וואטסאפ **אוטומטית למשתמשים** דורשת WhatsApp Business API (בתשלום + שרת), ולכן את הקוד למשתמש אתה שולח בלחיצה אחת מהפאנל – מה שגם מתאים לזה שאתה מאשר רק אחרי שיחה.
+
+## (אופציונלי) שליחת הקוד למשתמש במייל אוטומטית – EmailJS
+בלי זה, כפתור "שלח במייל" בפאנל פותח מייל מוכן מהחשבון שלך. אם תרצה שליחה אוטומטית:
+הירשם ב-[emailjs.com](https://www.emailjs.com), חבר את Gmail, צור תבנית עם To Email = `{{to_email}}` ותוכן שכולל `{{name}}` ו-`{{code}}`, ומלא ב-`src/config.js` את `publicKey`, `serviceId`, `userTemplateId`.
+
+## 4. פאנל הניהול ואתר ה-Web – GitHub Pages
 
 ב-GitHub: **Settings → Pages → Source: GitHub Actions**. מהריצה הבאה של `Web + Firestore rules` האתר עולה אוטומטית:
 - אפליקציה: https://jeanwallters-cmd.github.io/trainandfit-app/
-- דף אישור: https://jeanwallters-cmd.github.io/trainandfit-app/admin.html
+- פאנל ניהול: https://jeanwallters-cmd.github.io/trainandfit-app/admin.html
 
 אחרי שינוי `src/config.js` – commit + push, וה-APK והאתר נבנים מחדש עם ההגדרות.
 

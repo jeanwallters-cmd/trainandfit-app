@@ -3,8 +3,8 @@ import { getAuth, signInAnonymously } from 'firebase/auth';
 import {
     getFirestore, doc, getDoc, setDoc, addDoc, collection, onSnapshot, serverTimestamp,
 } from 'firebase/firestore';
-import { firebaseConfig, ADMIN_URL, emailjs } from './config.js';
-import { sendEmail, sendAdminWhatsApp, isValidPhone, normalizePhone } from './notify.js';
+import { firebaseConfig, ADMIN_URL } from './config.js';
+import { sendAdminEmail, sendAdminWhatsApp, isValidPhone, normalizePhone } from './notify.js';
 
 const LOCAL_KEY = 'workout_app_workouts';
 const SYNC_KEY = 'workout_sync_id';
@@ -167,9 +167,9 @@ window.submitAccessRequest = async function (e) {
 
         const approveUrl = `${ADMIN_URL}?req=${ref.id}`;
         const results = await Promise.allSettled([
-            sendEmail(emailjs.adminTemplateId, {
-                request_id: ref.id, name, phone: normalizePhone(phone), email,
-                message: message || '-', approve_url: approveUrl,
+            sendAdminEmail(`🏋️ בקשה חדשה לקוד ענן – ${name}`, {
+                'שם': name, 'טלפון': normalizePhone(phone), 'מייל': email,
+                'בקשה': message || '-', 'לאישור': approveUrl,
             }),
             sendAdminWhatsApp(
                 `🏋️ בקשה חדשה לקוד ענן\nשם: ${name}\nטלפון: ${normalizePhone(phone)}\nמייל: ${email}\n` +

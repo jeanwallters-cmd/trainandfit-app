@@ -1,5 +1,5 @@
-// שליחת התראות ללא שרת: מייל דרך EmailJS, וואטסאפ דרך CallMeBot
-import { emailjs, callmebot } from './config.js';
+// שליחת התראות ללא שרת: מייל דרך FormSubmit / EmailJS, וואטסאפ דרך CallMeBot
+import { emailjs, callmebot, FORMSUBMIT_TARGET } from './config.js';
 
 export function normalizePhone(phone) {
     let d = String(phone || '').replace(/\D/g, '');
@@ -29,6 +29,23 @@ export async function sendEmail(templateId, params) {
     });
     if (!res.ok) throw new Error(`EmailJS ${res.status}: ${await res.text()}`);
     return true;
+}
+
+// מייל אוטומטי למנהל דרך FormSubmit
+export async function sendAdminEmail(subject, fields) {
+    if (!FORMSUBMIT_TARGET) return false;
+    const res = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(FORMSUBMIT_TARGET)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ _subject: subject, _template: 'table', _captcha: 'false', ...fields }),
+    });
+    if (!res.ok) throw new Error(`FormSubmit ${res.status}`);
+    return true;
+}
+
+// קישור מייל עם הודעה מוכנה (נפתח באפליקציית המייל של המכשיר)
+export function mailtoLink(to, subject, body) {
+    return `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
 // הודעת וואטסאפ אוטומטית למספר של מנהל האפליקציה

@@ -13,19 +13,27 @@ export const firebaseConfig = {
   appId: '1:722767574124:web:5ff0bcc30310d6dd1e9449',
 };
 
+// פרטי המנהל – לכאן נשלחות בקשות לקוד ענן (במייל ובוואטסאפ בו-זמנית)
+export const ADMIN_EMAIL = 'tamirmaidani@gmail.com';
+export const ADMIN_PHONE = '972528372666';
+
 // כתובת דף האישור (admin.html) – הקישור שמגיע אליך במייל ובוואטסאפ.
 export const ADMIN_URL = 'https://jeanwallters-cmd.github.io/trainandfit-app/admin.html';
 
-// EmailJS (חינמי עד 200 מיילים בחודש) – https://www.emailjs.com
+// מייל למנהל – FormSubmit (חינמי, בלי הרשמה). בבקשה הראשונה נשלח אליך מייל אימות חד-פעמי.
+// אחרי האימות אפשר להחליף את הכתובת במחרוזת האקראית ש-FormSubmit שולח, כדי שהמייל לא יופיע בקוד.
+export const FORMSUBMIT_TARGET = ADMIN_EMAIL;
+
+// אופציונלי: EmailJS (חינמי עד 200 מיילים בחודש) – לשליחת הקוד למשתמש במייל אוטומטית.
+// אם לא מוגדר, בדף הניהול יש כפתור ששולח את הקוד מהמייל שלך בלחיצה.
 export const emailjs = {
   publicKey: '',          // Account → General → Public Key
   serviceId: '',          // Email Services → Service ID
-  adminTemplateId: '',    // תבנית "בקשה חדשה" שנשלחת אליך
   userTemplateId: '',     // תבנית "הקוד שלך" שנשלחת למשתמש
 };
 
 // CallMeBot – שליחת וואטסאפ חינמית למספר שלך בלבד – https://www.callmebot.com/blog/free-api-whatsapp-messages/
 export const callmebot = {
-  phone: '',              // המספר שלך בפורמט בינלאומי, לדוג' 972501234567
-  apiKey: '',             // המפתח שהבוט שלח לך בוואטסאפ
+  phone: ADMIN_PHONE,
+  apiKey: '',             // המפתח שהבוט שלח לך בוואטסאפ (ראה SETUP.md)
 };
