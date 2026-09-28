@@ -1,4 +1,5 @@
 import { requestWakeLock, releaseWakeLock, toggleFullscreen } from './native.js';
+import { ensureLocalPeriod, isLocalExpired, startLocalPeriod, updateExpiryNote } from './localExpiry.js';
 
 function esc(s) {
     return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -49,9 +50,16 @@ let defaultWorkouts = [
 ];
 
 // טעינה מ-localStorage אם קיימת
+// שמירה מקומית לשבוע בלבד – אחרי שבוע התוכניות נמחקות מהמכשיר
+if (isLocalExpired()) {
+    localStorage.removeItem('workout_app_workouts');
+    startLocalPeriod();
+}
+ensureLocalPeriod();
+
 let storedWorkouts = null;
 try { storedWorkouts = JSON.parse(localStorage.getItem('workout_app_workouts')); } catch (e) { /* נתונים פגומים – חוזרים לברירת מחדל */ }
-window.workouts = Array.isArray(storedWorkouts) ? storedWorkouts : defaultWorkouts;
+window.workouts = Array.isArray(storedWorkouts) ? storedWorkouts : JSON.parse(JSON.stringify(defaultWorkouts));
 
 // משתני מערכת לאימון פעיל
 let activeWorkout = null;
@@ -595,8 +603,21 @@ function finishWorkout() {
     setTimeout(() => { stopWorkout(); }, 4000);
 }
 
+// בדיקת תפוגה גם כשהאפליקציה פתוחה (לא באמצע אימון)
+function resetIfLocalExpired() {
+    if (!isLocalExpired() || !document.getElementById('activeWorkoutView').classList.contains('hidden')) return;
+    window.workouts = JSON.parse(JSON.stringify(defaultWorkouts));
+    localStorage.setItem('workout_app_workouts', JSON.stringify(window.workouts));
+    startLocalPeriod();
+    if (!document.getElementById('listView').classList.contains('hidden')) renderList();
+    showToast('עבר שבוע – הזיכרון המקומי אופס');
+}
+setInterval(resetIfLocalExpired, 60 * 1000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) resetIfLocalExpired(); });
+
 // טעינה ראשונית של הרשימה
 renderList();
+updateExpiryNote();
 
 // פונקציות שנקראות מתוך ה-HTML (onclick)
 Object.assign(window, {

@@ -4,6 +4,7 @@ import {
     getFirestore, doc, getDoc, setDoc, addDoc, collection, onSnapshot, serverTimestamp,
 } from 'firebase/firestore';
 import { firebaseConfig, ADMIN_URL } from './config.js';
+import { startLocalPeriod, clearLocalPeriod } from './localExpiry.js';
 import { sendAdminEmail, sendAdminWhatsApp, isValidPhone, normalizePhone } from './notify.js';
 
 const LOCAL_KEY = 'workout_app_workouts';
@@ -248,6 +249,7 @@ window.connectExistingSync = async function (inputId = 'existingSyncId') {
     if (success) {
         currentSyncId = code;
         localStorage.setItem(SYNC_KEY, code);
+        clearLocalPeriod();
         if (requestUnsub) requestUnsub();
         currentRequestId = null;
         localStorage.removeItem(REQUEST_KEY);
@@ -259,9 +261,10 @@ window.connectExistingSync = async function (inputId = 'existingSyncId') {
 window.disconnectSync = function () {
     currentSyncId = null;
     localStorage.removeItem(SYNC_KEY);
+    startLocalPeriod();
     updateCloudStatusUI('online');
     window.closeCloudModal();
-    window.showToast('התנתקת מהענן. המידע יישמר מקומית בדפדפן.');
+    window.showToast('התנתקת מהענן. המידע יישמר מקומית לשבוע.');
 };
 
 window.copySyncId = async function () {
