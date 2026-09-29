@@ -39,7 +39,11 @@ export async function sendAdminEmail(subject, fields) {
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({ _subject: subject, _template: 'table', _captcha: 'false', ...fields }),
     });
-    if (!res.ok) throw new Error(`FormSubmit ${res.status}`);
+    const data = await res.json().catch(() => ({}));
+    // FormSubmit מחזיר 200 גם כשהמייל לא נשלח (למשל כשהטופס צריך אישור מחדש) – בודקים את התשובה
+    if (!res.ok || String(data.success) !== 'true') {
+        throw new Error(`FormSubmit: ${data.message || res.status}`);
+    }
     return true;
 }
 
@@ -58,8 +62,10 @@ export async function sendAdminTelegram(text, buttonText, buttonUrl) {
         chat_id: telegram.chatId,
         text,
         disable_web_page_preview: true,
-        reply_markup: JSON.stringify({ inline_keyboard: [[{ text: buttonText, url: buttonUrl }]] }),
     };
+    if (buttonText && buttonUrl) {
+        params.reply_markup = JSON.stringify({ inline_keyboard: [[{ text: buttonText, url: buttonUrl }]] });
+    }
     const url = `https://api.telegram.org/bot${telegram.botToken}/sendMessage`;
     // בקשת טופס פשוטה – נשלחת גם אם הדפדפן לא מאפשר לקרוא את התשובה
     const res = await fetch(url, { method: 'POST', body: new URLSearchParams(params) });

@@ -182,6 +182,11 @@ window.submitAccessRequest = async function (e) {
             ),
         ]);
         results.filter((r) => r.status === 'rejected').forEach((r) => console.error('notify failed', r.reason));
+        // אם המייל נכשל – מדווחים למנהל בטלגרם עם הסיבה
+        if (results[0].status === 'rejected') {
+            sendAdminTelegram(`⚠️ מייל הבקשה של ${name} לא נשלח:\n${results[0].reason?.message || results[0].reason}`)
+                .catch(() => {});
+        }
 
         watchRequest(ref.id);
         showCloudView('cloudPendingView');
