@@ -13,3 +13,7 @@ firebase-debug.log
 *.p8
 keystore.properties
 signing/
+
+# local secrets for development
+.env.local
+.env.*.local

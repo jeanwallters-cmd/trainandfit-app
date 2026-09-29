@@ -31,6 +31,9 @@ jobs:
           cache: gradle
 
       - name: Build web app and sync to Android
+        env:
+          VITE_TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          VITE_TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           npm ci
           npm run build
