@@ -36,11 +36,12 @@
 2. BotFather ישלח **טוקן** שנראה כך: `123456789:AAH...`
 3. פתח את הבוט החדש שלך ולחץ **Start** (בלי זה הבוט לא יכול לשלוח לך הודעות).
 4. פתח את **@userinfobot** ולחץ **Start** – הוא יחזיר את ה-**Id** שלך (מספר).
-5. ב-GitHub: **Settings → Secrets and variables → Actions → New repository secret**, הוסף שני Secrets:
+5. ב-GitHub: **Settings → Secrets and variables → Actions → New repository secret**, הוסף Secret:
    | Secret | ערך |
    |---|---|
    | `TELEGRAM_BOT_TOKEN` | הטוקן מ-BotFather |
-   | `TELEGRAM_CHAT_ID` | ה-Id מ-@userinfobot |
+
+   (ה-Id של המנהל, `1633101453`, כבר מוגדר בקוד. `TELEGRAM_CHAT_ID` נדרש רק כדי להחליף אותו.)
 
    הערכים לא נשמרים בקוד/בריפו – הם נכנסים לאפליקציה רק בזמן הבנייה. אחרי ההוספה הרץ שוב את הבנייה (Actions → Android APK → Run workflow) או עשה push.
 

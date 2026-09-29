@@ -39,9 +39,9 @@ export const callmebot = {
 };
 
 // בוט טלגרם – התראה מיידית ואמינה אליך (חינם, API רשמי של טלגרם). ראה SETUP.md
-// הערכים לא נשמרים בריפו: הם מגיעים מ-GitHub Secrets (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID)
+// הטוקן לא נשמר בריפו: הוא מגיע מ-GitHub Secret בשם TELEGRAM_BOT_TOKEN
 // בזמן הבנייה, או מקובץ .env.local מקומי (לא נכנס לגיט).
 export const telegram = {
   botToken: import.meta.env.VITE_TELEGRAM_BOT_TOKEN || '',
-  chatId: import.meta.env.VITE_TELEGRAM_CHAT_ID || '',
+  chatId: import.meta.env.VITE_TELEGRAM_CHAT_ID || '1633101453', // מזהה הטלגרם של המנהל (לא סודי)
 };
