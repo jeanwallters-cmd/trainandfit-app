@@ -182,10 +182,14 @@ window.submitAccessRequest = async function (e) {
             ),
         ]);
         results.filter((r) => r.status === 'rejected').forEach((r) => console.error('notify failed', r.reason));
-        // אם המייל נכשל – מדווחים למנהל בטלגרם עם הסיבה
-        if (results[0].status === 'rejected') {
-            sendAdminTelegram(`⚠️ מייל הבקשה של ${name} לא נשלח:\n${results[0].reason?.message || results[0].reason}`)
-                .catch(() => {});
+        // מדווחים למנהל בטלגרם על כל תקלה במייל – גם כשהגיבוי נשלח
+        const mail = results[0];
+        const mailErrors = mail.status === 'rejected'
+            ? [mail.reason?.message || String(mail.reason)]
+            : mail.value?.errors || [];
+        if (mailErrors.length) {
+            const how = mail.status === 'fulfilled' ? `\nנשלח במקום דרך: ${mail.value.route}` : '\nהמייל לא נשלח.';
+            sendAdminTelegram(`⚠️ תקלה במייל הבקשה של ${name}:\n${mailErrors.join('\n')}${how}`).catch(() => {});
         }
 
         watchRequest(ref.id);

@@ -62,20 +62,23 @@ async function sendViaFormSubmit(subject, fields) {
     }
 }
 
+// מחזיר { route, errors } – באיזה שירות המייל נשלח, ואילו שירותים נכשלו בדרך
 export async function sendAdminEmail(subject, fields) {
     const errors = [];
     if (WEB3FORMS_KEY) {
         try {
             await sendViaWeb3Forms(subject, fields);
-            return true;
+            return { route: 'Web3Forms', errors };
         } catch (e) {
             errors.push(e.message);
         }
+    } else {
+        errors.push('Web3Forms: אין מפתח באפליקציה');
     }
     if (FORMSUBMIT_TARGET) {
         try {
             await sendViaFormSubmit(subject, fields);
-            return true;
+            return { route: 'FormSubmit (גיבוי, ללא אישור מסירה)', errors };
         } catch (e) {
             errors.push(e.message);
         }
