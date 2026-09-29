@@ -8,43 +8,16 @@ function esc(s) {
 // תוכניות ברירת מחדל מוכנות עם תרגילים אמיתיים
 let defaultWorkouts = [
     {
-        id: 'w_1',
-        name: 'אימון בזמן עבודה באבטחה',
-        goal: 'רעננות ותנועתיות',
-        sets: 3,
-        setRest: 45,
-        exercises: [
-            { name: "סיבובי צוואר ומתיחות עמידה", type: "time", workTime: 45, restTime: 15, repsCount: 0 },
-            { name: "עליות תאומים", type: "reps", workTime: 0, restTime: 20, repsCount: 20 },
-            { name: "סקוואט סטטי קל", type: "time", workTime: 30, restTime: 30, repsCount: 0 },
-            { name: "הליכה במקום / פטרול מהיר", type: "time", workTime: 60, restTime: 15, repsCount: 0 }
-        ]
-    },
-    {
-        id: 'w_2',
-        name: 'אימון ללא ציוד (פלג גוף עליון)',
-        goal: 'כוח וחיטוב חזה וזרועות',
+        id: 'w_gift',
+        name: 'אימון מתנה',
+        goal: 'אימון כללי - לגוף כולו!',
         sets: 3,
         setRest: 60,
         exercises: [
-            { name: "שכיבות סמיכה", type: "reps", workTime: 0, restTime: 30, repsCount: 15 },
-            { name: "פלאנק סטטי", type: "time", workTime: 45, restTime: 15, repsCount: 0 },
-            { name: "מטפס הרים", type: "time", workTime: 30, restTime: 25, repsCount: 0 },
-            { name: "מקבילים על כיסא", type: "reps", workTime: 0, restTime: 25, repsCount: 12 }
-        ]
-    },
-    {
-        id: 'w_3',
-        name: 'אימון ביתי עם קטלבל',
-        goal: 'סיבולת ושריפת שומן',
-        sets: 4,
-        setRest: 60,
-        exercises: [
-            { name: "הנפות קטלבל (Swings)", type: "time", workTime: 45, restTime: 15, repsCount: 0 },
-            { name: "סקוואט גביע", type: "reps", workTime: 0, restTime: 20, repsCount: 12 },
-            { name: "חתירה בהטיית גו - ימין", type: "reps", workTime: 0, restTime: 15, repsCount: 10 },
-            { name: "חתירה בהטיית גו - שמאל", type: "reps", workTime: 0, restTime: 15, repsCount: 10 },
-            { name: "לחיצת כתפיים", type: "reps", workTime: 0, restTime: 20, repsCount: 10 }
+            { name: "ריצה במקום", type: "time", workTime: 40, restTime: 20, repsCount: 0 },
+            { name: "סקוואט", type: "reps", workTime: 0, restTime: 20, repsCount: 10 },
+            { name: "שכיבות סמיכה", type: "time", workTime: 40, restTime: 20, repsCount: 0 },
+            { name: "קפיצה בפתיחה וסגירה רגליים", type: "time", workTime: 40, restTime: 20, repsCount: 0 }
         ]
     }
 ];
