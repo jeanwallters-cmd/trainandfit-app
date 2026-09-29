@@ -5,7 +5,7 @@ import {
 } from 'firebase/firestore';
 import { firebaseConfig, ADMIN_URL } from './config.js';
 import { startLocalPeriod, clearLocalPeriod } from './localExpiry.js';
-import { sendAdminEmail, sendAdminWhatsApp, isValidPhone, normalizePhone } from './notify.js';
+import { sendAdminEmail, sendAdminTelegram, sendAdminWhatsApp, isValidPhone, normalizePhone } from './notify.js';
 
 const LOCAL_KEY = 'workout_app_workouts';
 const SYNC_KEY = 'workout_sync_id';
@@ -172,6 +172,10 @@ window.submitAccessRequest = async function (e) {
                 'שם': name, 'טלפון': normalizePhone(phone), 'מייל': email,
                 'בקשה': message || '-', 'לאישור': approveUrl,
             }),
+            sendAdminTelegram(
+                `🏋️ בקשה חדשה לקוד ענן\n\n👤 ${name}\n📱 ${normalizePhone(phone)}\n✉️ ${email}\n💬 ${message || '-'}`,
+                '✅ פתח לאישור', approveUrl,
+            ),
             sendAdminWhatsApp(
                 `🏋️ בקשה חדשה לקוד ענן\nשם: ${name}\nטלפון: ${normalizePhone(phone)}\nמייל: ${email}\n` +
                 `בקשה: ${message || '-'}\n\nלאישור: ${approveUrl}`,

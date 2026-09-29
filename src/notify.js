@@ -1,5 +1,5 @@
-// שליחת התראות ללא שרת: מייל דרך FormSubmit / EmailJS, וואטסאפ דרך CallMeBot
-import { emailjs, callmebot, FORMSUBMIT_TARGET } from './config.js';
+// שליחת התראות ללא שרת: מייל דרך FormSubmit / EmailJS, טלגרם דרך Bot API, וואטסאפ דרך CallMeBot
+import { emailjs, callmebot, telegram, FORMSUBMIT_TARGET } from './config.js';
 
 export function normalizePhone(phone) {
     let d = String(phone || '').replace(/\D/g, '');
@@ -46,6 +46,26 @@ export async function sendAdminEmail(subject, fields) {
 // קישור מייל עם הודעה מוכנה (נפתח באפליקציית המייל של המכשיר)
 export function mailtoLink(to, subject, body) {
     return `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+// הודעת טלגרם מיידית למנהל, עם כפתור שפותח את פאנל הניהול
+export async function sendAdminTelegram(text, buttonText, buttonUrl) {
+    if (!telegram.botToken || !telegram.chatId) {
+        console.warn('Telegram is not configured (src/config.js)');
+        return false;
+    }
+    const params = {
+        chat_id: telegram.chatId,
+        text,
+        disable_web_page_preview: true,
+        reply_markup: JSON.stringify({ inline_keyboard: [[{ text: buttonText, url: buttonUrl }]] }),
+    };
+    const url = `https://api.telegram.org/bot${telegram.botToken}/sendMessage`;
+    // בקשת טופס פשוטה – נשלחת גם אם הדפדפן לא מאפשר לקרוא את התשובה
+    const res = await fetch(url, { method: 'POST', body: new URLSearchParams(params) });
+    const data = await res.json().catch(() => ({ ok: true }));
+    if (!data.ok) throw new Error(`Telegram: ${data.description}`);
+    return true;
 }
 
 // הודעת וואטסאפ אוטומטית למספר של מנהל האפליקציה

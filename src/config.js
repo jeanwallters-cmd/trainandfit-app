@@ -37,3 +37,9 @@ export const callmebot = {
   phone: ADMIN_PHONE,
   apiKey: '',             // המפתח שהבוט שלח לך בוואטסאפ (ראה SETUP.md)
 };
+
+// בוט טלגרם – התראה מיידית ואמינה אליך (חינם, API רשמי של טלגרם). ראה SETUP.md
+export const telegram = {
+  botToken: '',           // הטוקן מ-@BotFather, לדוג' 123456789:AA...
+  chatId: '',             // המזהה שלך מ-@userinfobot, לדוג' 123456789
+};
