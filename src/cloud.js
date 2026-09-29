@@ -1,10 +1,10 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import {
-    getFirestore, doc, getDoc, setDoc, addDoc, collection, onSnapshot, serverTimestamp,
+    getFirestore, doc, getDoc, getDocFromServer, setDoc, updateDoc, addDoc, collection, onSnapshot, serverTimestamp,
 } from 'firebase/firestore';
 import { firebaseConfig, ADMIN_URL } from './config.js';
-import { startLocalPeriod, clearLocalPeriod } from './localExpiry.js';
+import { startLocalPeriod, clearLocalPeriod, attachServer } from './localExpiry.js';
 import { sendAdminEmail, sendAdminTelegram, sendAdminWhatsApp, isValidPhone, normalizePhone } from './notify.js';
 
 const LOCAL_KEY = 'workout_app_workouts';
@@ -45,6 +45,8 @@ async function initFirebase() {
         auth = getAuth(app);
         await signInAnonymously(auth);
         isCloudReady = true;
+        // getDocFromServer: time must come from the server, never from the local cache
+        attachServer(db, auth.currentUser.uid, { doc, getDoc: getDocFromServer, setDoc, updateDoc, serverTimestamp });
         updateCloudStatusUI('online');
 
         // אם קיים קוד סנכרון, מושכים נתונים ראשוניים
@@ -277,7 +279,7 @@ window.disconnectSync = function () {
     startLocalPeriod();
     updateCloudStatusUI('online');
     window.closeCloudModal();
-    window.showToast('התנתקת מהענן. המידע יישמר מקומית לשבוע.');
+    window.showToast('התנתקת מהענן. המידע יישמר מקומית עד מועד האיפוס.');
 };
 
 window.copySyncId = async function () {

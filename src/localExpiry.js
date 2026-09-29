@@ -1,20 +1,53 @@
 // שמירה מקומית זמנית: תוכניות האימון נשמרות במכשיר לשבוע אחד בלבד, ואז נמחקות.
 // משתמש שמחובר לענן לא מושפע – הנתונים שלו שמורים בענן.
-const EXPIRY_KEY = 'workout_local_expires';
+//
+// הגנה משינוי שעון הטלפון – שתי שכבות:
+// 1. "זמן אמין" מקומי: סופרים רק זמן שעבר קדימה. החזרת השעון אחורה לא מחזירה את הספירה.
+// 2. זמן שרת (Firebase): כשיש אינטרנט, תחילת השבוע והשעה הנוכחית נלקחים מהשרת,
+//    וכללי האבטחה לא מאפשרים להתחיל שבוע חדש לפני שהקודם נגמר.
+
+const EXPIRY_KEY = 'workout_local_expires';   // מועד האיפוס, ב"זמן אמין"
+const TRUSTED_KEY = 'workout_trusted_now';    // הזמן האמין האחרון שנמדד
+const WALL_KEY = 'workout_wall_last';         // שעון המכשיר במדידה האחרונה
+const RESET_KEY = 'workout_last_reset';       // מתי (בזמן אמין) היה האיפוס האחרון
 const SYNC_KEY = 'workout_sync_id';
 export const LOCAL_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
+let server = null; // { db, uid, fs } אחרי התחברות לענן (fs = פונקציות Firestore)
+
+const num = (key) => {
+    const v = Number(localStorage.getItem(key));
+    return Number.isFinite(v) && v > 0 ? v : null;
+};
+
 export const isCloudConnected = () => !!localStorage.getItem(SYNC_KEY);
 
-function getExpiry() {
-    const v = parseInt(localStorage.getItem(EXPIRY_KEY), 10);
-    return Number.isFinite(v) ? v : null;
+// שכבה 1: זמן שמתקדם רק קדימה, גם אם שעון הטלפון מוחזר אחורה
+export function trustedNow() {
+    const wall = Date.now();
+    const last = num(WALL_KEY);
+    let t = num(TRUSTED_KEY);
+    if (t === null) t = wall;
+    else if (last !== null && wall > last) t += wall - last;
+    localStorage.setItem(TRUSTED_KEY, String(t));
+    localStorage.setItem(WALL_KEY, String(wall));
+    return t;
 }
 
-// מתחיל תקופה של שבוע מעכשיו
+function setTrustedNow(t) {
+    localStorage.setItem(TRUSTED_KEY, String(t));
+    localStorage.setItem(WALL_KEY, String(Date.now()));
+}
+
+const getExpiry = () => num(EXPIRY_KEY);
+
+// מתחיל תקופה של שבוע מעכשיו (אחרי איפוס / התקנה / ניתוק מהענן)
 export function startLocalPeriod() {
-    localStorage.setItem(EXPIRY_KEY, String(Date.now() + LOCAL_TTL_MS));
+    const t = trustedNow();
+    localStorage.setItem(EXPIRY_KEY, String(t + LOCAL_TTL_MS));
+    localStorage.setItem(RESET_KEY, String(t));
     updateExpiryNote();
+    restartServerPeriod();
 }
 
 // בחיבור לענן אין תפוגה
@@ -29,7 +62,7 @@ export function ensureLocalPeriod() {
 
 export function isLocalExpired() {
     const exp = getExpiry();
-    return !isCloudConnected() && exp !== null && Date.now() >= exp;
+    return !isCloudConnected() && exp !== null && trustedNow() >= exp;
 }
 
 export function updateExpiryNote() {
@@ -40,7 +73,69 @@ export function updateExpiryNote() {
         el.classList.add('hidden');
         return;
     }
-    const d = new Date(exp);
+    // מציגים לפי השעון של המכשיר את הזמן שנותר בפועל
+    const d = new Date(Date.now() + Math.max(0, exp - trustedNow()));
     el.innerText = `⏳ הזיכרון המקומי יתאפס ב-${d.toLocaleDateString('he-IL')} ${d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}`;
     el.classList.remove('hidden');
+}
+
+// ---------- שכבה 2: זמן ותקופה מהשרת ----------
+const deviceDoc = () => server.fs.doc(server.db, 'devices', server.uid);
+
+async function restartServerPeriod() {
+    if (!server) return;
+    const { updateDoc, serverTimestamp } = server.fs;
+    try {
+        // כללי האבטחה מאפשרים זאת רק אם השבוע הקודם בשרת כבר נגמר
+        await updateDoc(deviceDoc(), { periodStart: serverTimestamp(), lastSeen: serverTimestamp() });
+        await syncServerTime();
+    } catch (e) {
+        // השבוע בשרת עוד לא נגמר – נשארים עם המועד של השרת
+        await syncServerTime();
+    }
+}
+
+// מסנכרן את הזמן האמין ואת מועד האיפוס מול השרת. מחזיר true אם הצליח.
+export async function syncServerTime() {
+    if (!server) return false;
+    const { getDoc, setDoc, updateDoc, serverTimestamp } = server.fs;
+    try {
+        const ref = deviceDoc();
+        const existing = await getDoc(ref);
+        if (existing.exists()) {
+            await updateDoc(ref, { lastSeen: serverTimestamp() });
+        } else {
+            await setDoc(ref, { periodStart: serverTimestamp(), lastSeen: serverTimestamp() });
+        }
+        const snap = await getDoc(ref);
+        const { periodStart, lastSeen } = snap.data();
+        const serverNow = lastSeen.toMillis();
+        const serverEnd = periodStart.toMillis() + LOCAL_TTL_MS;
+        setTrustedNow(serverNow);
+
+        if (!isCloudConnected()) {
+            const lastReset = num(RESET_KEY);
+            if (serverNow >= serverEnd && lastReset !== null && lastReset >= serverEnd && lastReset <= serverNow) {
+                // המכשיר כבר אופס בלי אינטרנט אחרי שהשבוע בשרת נגמר – רק מתחילים שבוע חדש בשרת
+                await updateDoc(ref, { periodStart: serverTimestamp(), lastSeen: serverTimestamp() });
+                return syncServerTime();
+            }
+            // השרת קובע את מועד האיפוס (אי אפשר להאריך אותו מקומית)
+            localStorage.setItem(EXPIRY_KEY, String(serverEnd));
+            updateExpiryNote();
+            document.dispatchEvent(new Event('local-expiry-check'));
+        }
+        return true;
+    } catch (e) {
+        console.warn('server time sync failed', e?.message || e);
+        return false;
+    }
+}
+
+export function attachServer(db, uid, fs) {
+    server = { db, uid, fs };
+    syncServerTime();
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) syncServerTime();
+    });
 }

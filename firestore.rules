@@ -60,6 +60,23 @@ service cloud.firestore {
         && request.resource.data.workouts.size() <= 200;
     }
 
+    // מועד האיפוס השבועי של כל מכשיר (לפי זמן השרת). אפשר להתחיל שבוע חדש רק אחרי שהקודם נגמר.
+    match /devices/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['periodStart', 'lastSeen'])
+        && request.resource.data.periodStart == request.time
+        && request.resource.data.lastSeen == request.time;
+      allow update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['periodStart', 'lastSeen'])
+        && request.resource.data.lastSeen == request.time
+        && (
+          request.resource.data.periodStart == resource.data.periodStart
+          || (request.resource.data.periodStart == request.time
+              && resource.data.periodStart + duration.value(7, 'd') <= request.time)
+        );
+    }
+
     // כל השאר חסום
     match /{document=**} {
       allow read, write: if false;

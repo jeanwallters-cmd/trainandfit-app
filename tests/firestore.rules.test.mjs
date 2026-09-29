@@ -1,5 +1,5 @@
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, addDoc, collection, getDocs, query, where, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, addDoc, collection, getDocs, query, where, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import fs from 'fs';
 
 const env = await initializeTestEnvironment({ projectId: 'demo-test', firestore: { rules: fs.readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8'), host: '127.0.0.1', port: 8080 } });
@@ -50,6 +50,19 @@ await t('unauthenticated read denied', assertFails(getDoc(doc(anon, 'workout_syn
 await t('user reads own admin doc -> not exists ok', assertSucceeds(getDoc(doc(user, 'admins/USER1'))));
 await t('user cannot make self admin', assertFails(setDoc(doc(user, 'admins/USER1'), { x: 1 })));
 await t('legacy path closed', assertFails(getDoc(doc(user, 'artifacts/workout-builder-app/public/data/workout_syncs/ABC'))));
+// ---- weekly local-memory period (devices) ----
+await t('device creates its period with server time', assertSucceeds(setDoc(doc(user, 'devices/USER1'), { periodStart: serverTimestamp(), lastSeen: serverTimestamp() })));
+await t('device cannot create period with a chosen date', assertFails(setDoc(doc(other, 'devices/USER2'), { periodStart: Timestamp.fromMillis(Date.now() + 30 * 864e5), lastSeen: serverTimestamp() })));
+await t('device cannot write another device', assertFails(setDoc(doc(user, 'devices/USER2'), { periodStart: serverTimestamp(), lastSeen: serverTimestamp() })));
+await t('device updates lastSeen', assertSucceeds(updateDoc(doc(user, 'devices/USER1'), { lastSeen: serverTimestamp() })));
+await t('cannot restart the week before it ends', assertFails(updateDoc(doc(user, 'devices/USER1'), { periodStart: serverTimestamp(), lastSeen: serverTimestamp() })));
+await t('cannot push the week into the future', assertFails(updateDoc(doc(user, 'devices/USER1'), { periodStart: Timestamp.fromMillis(Date.now() + 30 * 864e5), lastSeen: serverTimestamp() })));
+await env.withSecurityRulesDisabled(async (ctx) => {
+  await setDoc(doc(ctx.firestore(), 'devices/USER1'), { periodStart: Timestamp.fromMillis(Date.now() - 8 * 864e5), lastSeen: Timestamp.fromMillis(Date.now() - 864e5) });
+});
+await t('can restart the week after it ended', assertSucceeds(updateDoc(doc(user, 'devices/USER1'), { periodStart: serverTimestamp(), lastSeen: serverTimestamp() })));
+await t('device reads its own period', assertSucceeds(getDoc(doc(user, 'devices/USER1'))));
+await t('other device cannot read it', assertFails(getDoc(doc(other, 'devices/USER1'))));
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();
 process.exit(fail ? 1 : 0);

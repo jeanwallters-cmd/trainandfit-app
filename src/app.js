@@ -640,6 +640,7 @@ function resetIfLocalExpired() {
     showToast('עבר שבוע – הזיכרון המקומי אופס');
 }
 setInterval(resetIfLocalExpired, 60 * 1000);
+document.addEventListener('local-expiry-check', resetIfLocalExpired);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) resetIfLocalExpired(); });
 
 // טעינה ראשונית של הרשימה
