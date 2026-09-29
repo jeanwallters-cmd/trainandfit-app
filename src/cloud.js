@@ -4,7 +4,7 @@ import {
     getFirestore, doc, getDoc, getDocFromServer, setDoc, updateDoc, addDoc, collection, onSnapshot, serverTimestamp,
 } from 'firebase/firestore';
 import { firebaseConfig, ADMIN_URL } from './config.js';
-import { startLocalPeriod, clearLocalPeriod, attachServer } from './localExpiry.js';
+import { startLocalPeriod, clearLocalPeriod, attachServer, markServerUnavailable } from './localExpiry.js';
 import { sendAdminEmail, sendAdminTelegram, sendAdminWhatsApp, isValidPhone, normalizePhone } from './notify.js';
 
 const LOCAL_KEY = 'workout_app_workouts';
@@ -55,6 +55,7 @@ async function initFirebase() {
         return true;
     } catch (e) {
         console.error('Firebase init failed', e);
+        markServerUnavailable();
         if (currentSyncId) updateCloudStatusUI('error');
         return false;
     }

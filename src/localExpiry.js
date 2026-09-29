@@ -14,6 +14,22 @@ const SYNC_KEY = 'workout_sync_id';
 export const LOCAL_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 let server = null; // { db, uid, fs } אחרי התחברות לענן (fs = פונקציות Firestore)
+// מצב אימות הזמן מול השרת: 'pending' עד שהענן עולה, 'ok' אחרי סנכרון, 'failed' אם אין שרת
+let serverState = 'pending';
+let lastServerSync = 0;
+const SERVER_FRESH_MS = 2 * 60 * 1000;
+const SERVER_WAIT_MS = 10 * 1000;
+setTimeout(() => {
+    if (serverState === 'pending') {
+        serverState = 'failed';
+        document.dispatchEvent(new Event('local-expiry-check'));
+    }
+}, SERVER_WAIT_MS);
+
+export function markServerUnavailable() {
+    serverState = 'failed';
+    document.dispatchEvent(new Event('local-expiry-check'));
+}
 
 const num = (key) => {
     const v = Number(localStorage.getItem(key));
@@ -65,6 +81,18 @@ export function isLocalExpired() {
     return !isCloudConnected() && exp !== null && trustedNow() >= exp;
 }
 
+// האם למחוק עכשיו? כשיש אינטרנט – רק אחרי שהשרת אישר שהשבוע באמת נגמר,
+// כדי ששעון שגוי בטלפון (למשל תאריך שהוזז קדימה) לא ימחק תוכניות.
+export function shouldResetNow() {
+    if (!isLocalExpired()) return false;
+    const online = typeof navigator === 'undefined' || navigator.onLine !== false;
+    if (!online || serverState === 'failed') return true;
+    if (serverState === 'pending') return false; // מחכים לשרת (עד 10 שניות)
+    if (Date.now() - lastServerSync < SERVER_FRESH_MS && lastServerSync > 0) return true;
+    syncServerTime(); // הזמן מהשרת ישן – מאמתים קודם; הסנכרון יפעיל בדיקה חוזרת
+    return false;
+}
+
 export function updateExpiryNote() {
     const el = document.getElementById('localExpiryNote');
     if (!el) return;
@@ -112,6 +140,8 @@ export async function syncServerTime() {
         const serverNow = lastSeen.toMillis();
         const serverEnd = periodStart.toMillis() + LOCAL_TTL_MS;
         setTrustedNow(serverNow);
+        serverState = 'ok';
+        lastServerSync = Date.now();
 
         if (!isCloudConnected()) {
             const lastReset = num(RESET_KEY);
@@ -123,11 +153,13 @@ export async function syncServerTime() {
             // השרת קובע את מועד האיפוס (אי אפשר להאריך אותו מקומית)
             localStorage.setItem(EXPIRY_KEY, String(serverEnd));
             updateExpiryNote();
-            document.dispatchEvent(new Event('local-expiry-check'));
         }
+        document.dispatchEvent(new Event('local-expiry-check'));
         return true;
     } catch (e) {
         console.warn('server time sync failed', e?.message || e);
+        if (serverState !== 'ok') serverState = 'failed';
+        document.dispatchEvent(new Event('local-expiry-check'));
         return false;
     }
 }

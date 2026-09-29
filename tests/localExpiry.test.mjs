@@ -39,6 +39,12 @@ await L.syncServerTime();
 exp = Number(localStorage.getItem('workout_local_expires'));
 ok('server restores the real expiry after local tampering', exp - Date.now() < 7 * DAY + 60000, days(exp - Date.now()));
 
+// phone date moved 10 days forward: must NOT wipe the plans once the server answers
+localStorage.setItem('workout_trusted_now', String(Date.now() + 10 * DAY));
+ok('forward clock looks expired locally', L.isLocalExpired());
+await L.syncServerTime();
+ok('server corrects a forward clock: no reset', !L.shouldResetNow() && !L.isLocalExpired());
+
 // tamper: phone clock / trusted time pushed back a month
 localStorage.setItem('workout_trusted_now', String(Date.now() - 30 * DAY));
 await L.syncServerTime();
@@ -51,7 +57,7 @@ await withSecurityRulesDisabled('devices/DEV1', { periodStart: Timestamp.fromMil
 localStorage.setItem('workout_last_reset', String(Date.now() - 9 * DAY)); // device was not reset since
 checks = 0;
 await L.syncServerTime();
-ok('expired server week makes the app expire locally', L.isLocalExpired() && checks > 0);
+ok('expired server week makes the app expire locally', L.isLocalExpired() && L.shouldResetNow() && checks > 0);
 
 // a forged "already reset" marker from the future is ignored
 await withSecurityRulesDisabled('devices/DEV1', { periodStart: Timestamp.fromMillis(Date.now() - 8 * DAY), lastSeen: Timestamp.fromMillis(Date.now() - DAY) });

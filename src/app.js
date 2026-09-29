@@ -1,5 +1,5 @@
 import { requestWakeLock, releaseWakeLock, toggleFullscreen } from './native.js';
-import { ensureLocalPeriod, isLocalExpired, startLocalPeriod, updateExpiryNote } from './localExpiry.js';
+import { ensureLocalPeriod, shouldResetNow, startLocalPeriod, updateExpiryNote } from './localExpiry.js';
 
 function esc(s) {
     return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -22,12 +22,8 @@ let defaultWorkouts = [
     }
 ];
 
-// טעינה מ-localStorage אם קיימת
-// שמירה מקומית לשבוע בלבד – אחרי שבוע התוכניות נמחקות מהמכשיר
-if (isLocalExpired()) {
-    localStorage.removeItem('workout_app_workouts');
-    startLocalPeriod();
-}
+// שמירה מקומית לשבוע בלבד – אחרי שבוע התוכניות נמחקות מהמכשיר.
+// הבדיקה עצמה (resetIfLocalExpired) רצה אחרי שהזמן אומת מול השרת כשיש אינטרנט.
 ensureLocalPeriod();
 
 let storedWorkouts = null;
@@ -632,7 +628,7 @@ function finishWorkout() {
 
 // בדיקת תפוגה גם כשהאפליקציה פתוחה (לא באמצע אימון)
 function resetIfLocalExpired() {
-    if (!isLocalExpired() || !document.getElementById('activeWorkoutView').classList.contains('hidden')) return;
+    if (!shouldResetNow() || !document.getElementById('activeWorkoutView').classList.contains('hidden')) return;
     window.workouts = JSON.parse(JSON.stringify(defaultWorkouts));
     localStorage.setItem('workout_app_workouts', JSON.stringify(window.workouts));
     startLocalPeriod();
@@ -647,6 +643,7 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) rese
 renderList();
 updateExpiryNote();
 resumeSession();
+resetIfLocalExpired(); // בלי אינטרנט – בודק מיד; עם אינטרנט – ממתין לאימות מהשרת
 
 // פונקציות שנקראות מתוך ה-HTML (onclick)
 Object.assign(window, {
