@@ -13,16 +13,14 @@
 
 ---
 
-## 1. Firebase (פרויקט `pe-app-db`) – 3 דקות
+## 1. Firebase (פרויקט נפרד `trainandfit-2c18c` – לא משפיע על פרויקטים אחרים)
 
-1. [Firebase Console](https://console.firebase.google.com/project/pe-app-db) → **Authentication → Sign-in method**:
+1. [Firebase Console](https://console.firebase.google.com/project/trainandfit-2c18c) → **Authentication → Sign-in method**:
    - הפעל **Anonymous** (האפליקציה)
    - הפעל **Google** (הכניסה שלך לפאנל)
 2. **Authentication → Settings → Authorized domains → Add domain**: `jeanwallters-cmd.github.io`
 3. **Firestore Database → Rules** – הדבק את כל התוכן של `firestore.rules` ולחץ **Publish**.
    > רק חשבון Google ‏tamirmaidani@gmail.com מוגדר כמנהל. אף אחד אחר לא יכול לאשר או להנפיק קודים.
-   >
-   > ⚠️ הכללים סוגרים את הנתיב הישן והפתוח (`artifacts/...`) של גרסת ה-Web הקודמת – קודים ישנים לא יעבדו, וכל משתמש צריך לבקש קוד חדש.
 
 ## 2. מייל אליך – Web3Forms (בלי הרשמה, דקה אחת)
 

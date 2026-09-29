@@ -5,12 +5,12 @@
 // Firebase (תוכנית Spark החינמית). מפתחות Web של Firebase הם ציבוריים מטבעם –
 // האבטחה נאכפת ע"י firestore.rules.
 export const firebaseConfig = {
-  apiKey: 'AIzaSyD0PtDlw-A547sGs6LdgcV7-bCxsVQaEXk',
-  authDomain: 'pe-app-db.firebaseapp.com',
-  projectId: 'pe-app-db',
-  storageBucket: 'pe-app-db.firebasestorage.app',
-  messagingSenderId: '722767574124',
-  appId: '1:722767574124:web:5ff0bcc30310d6dd1e9449',
+  apiKey: 'AIzaSyC9oG8mIsXL5NcvBT-yIQ7OPZhXpOc4DlQ',
+  authDomain: 'trainandfit-2c18c.firebaseapp.com',
+  projectId: 'trainandfit-2c18c',
+  storageBucket: 'trainandfit-2c18c.firebasestorage.app',
+  messagingSenderId: '120250908373',
+  appId: '1:120250908373:web:cc3a7ad974e8286883ec5c',
 };
 
 // פרטי המנהל – לכאן נשלחות בקשות לקוד ענן (במייל ובוואטסאפ בו-זמנית)
