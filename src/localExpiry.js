@@ -101,8 +101,9 @@ export function updateExpiryNote() {
         el.classList.add('hidden');
         return;
     }
-    // מציגים לפי השעון של המכשיר את הזמן שנותר בפועל
-    const d = new Date(Date.now() + Math.max(0, exp - trustedNow()));
+    // מועד האיפוס נשמר ב"זמן אמין" (זמן השרת כשיש אינטרנט), ולכן מוצג כמו שהוא –
+    // שינוי שעון הטלפון לא משנה את התאריך שמוצג
+    const d = new Date(exp);
     el.innerText = `⏳ הזיכרון המקומי יתאפס ב-${d.toLocaleDateString('he-IL')} ${d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}`;
     el.classList.remove('hidden');
 }
