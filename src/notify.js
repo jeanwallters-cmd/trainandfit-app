@@ -1,5 +1,5 @@
 // שליחת התראות ללא שרת: מייל דרך FormSubmit / EmailJS, טלגרם דרך Bot API, וואטסאפ דרך CallMeBot
-import { emailjs, callmebot, telegram, FORMSUBMIT_TARGET } from './config.js';
+import { emailjs, callmebot, telegram, FORMSUBMIT_TARGET, WEB3FORMS_KEY } from './config.js';
 
 export function normalizePhone(phone) {
     let d = String(phone || '').replace(/\D/g, '');
@@ -31,20 +31,56 @@ export async function sendEmail(templateId, params) {
     return true;
 }
 
-// מייל אוטומטי למנהל דרך FormSubmit
-export async function sendAdminEmail(subject, fields) {
-    if (!FORMSUBMIT_TARGET) return false;
-    const res = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(FORMSUBMIT_TARGET)}`, {
+// מייל אוטומטי למנהל: Web3Forms, ואם הוא לא זמין – FormSubmit
+async function sendViaWeb3Forms(subject, fields) {
+    const res = await fetch('https://api.web3forms.com/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ _subject: subject, _template: 'table', _captcha: 'false', ...fields }),
+        body: JSON.stringify({ access_key: WEB3FORMS_KEY, subject, from_name: 'האימונים שלי', ...fields }),
     });
     const data = await res.json().catch(() => ({}));
-    // FormSubmit מחזיר 200 גם כשהמייל לא נשלח (למשל כשהטופס צריך אישור מחדש) – בודקים את התשובה
-    if (!res.ok || String(data.success) !== 'true') {
-        throw new Error(`FormSubmit: ${data.message || res.status}`);
+    if (!data.success) throw new Error(`Web3Forms: ${data.message || res.status}`);
+}
+
+async function sendViaFormSubmit(subject, fields) {
+    const body = { _subject: subject, _template: 'table', _captcha: 'false', ...fields };
+    try {
+        const res = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(FORMSUBMIT_TARGET)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            body: JSON.stringify(body),
+        });
+        const data = await res.json().catch(() => ({}));
+        // FormSubmit מחזיר 200 גם כשהמייל לא נשלח (למשל כשהטופס צריך אישור מחדש) – בודקים את התשובה
+        if (!res.ok || String(data.success) !== 'true') throw new Error(`FormSubmit: ${data.message || res.status}`);
+    } catch (e) {
+        if (e.message?.startsWith('FormSubmit:')) throw e;
+        // "Failed to fetch" – שולחים כטופס רגיל, בלי לקרוא את התשובה
+        await fetch(`https://formsubmit.co/${encodeURIComponent(FORMSUBMIT_TARGET)}`, {
+            method: 'POST', mode: 'no-cors', body: new URLSearchParams(body),
+        });
     }
-    return true;
+}
+
+export async function sendAdminEmail(subject, fields) {
+    const errors = [];
+    if (WEB3FORMS_KEY) {
+        try {
+            await sendViaWeb3Forms(subject, fields);
+            return true;
+        } catch (e) {
+            errors.push(e.message);
+        }
+    }
+    if (FORMSUBMIT_TARGET) {
+        try {
+            await sendViaFormSubmit(subject, fields);
+            return true;
+        } catch (e) {
+            errors.push(e.message);
+        }
+    }
+    throw new Error(errors.join(' | ') || 'no email service configured');
 }
 
 // קישור מייל עם הודעה מוכנה (נפתח באפליקציית המייל של המכשיר)

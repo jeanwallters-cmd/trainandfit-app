@@ -1,6 +1,6 @@
 # מדריך הגדרה
 
-כל השירותים כאן **חינמיים**: Firebase (תוכנית Spark), FormSubmit (מייל), בוט טלגרם, CallMeBot (וואטסאפ), GitHub Pages ו-GitHub Actions.
+כל השירותים כאן **חינמיים**: Firebase (תוכנית Spark), Web3Forms / FormSubmit (מייל), בוט טלגרם, CallMeBot (וואטסאפ), GitHub Pages ו-GitHub Actions.
 
 ---
 
@@ -24,11 +24,15 @@
    >
    > ⚠️ הכללים סוגרים את הנתיב הישן והפתוח (`artifacts/...`) של גרסת ה-Web הקודמת – קודים ישנים לא יעבדו, וכל משתמש צריך לבקש קוד חדש.
 
-## 2. מייל אליך – FormSubmit (בלי הרשמה)
+## 2. מייל אליך – Web3Forms (בלי הרשמה, דקה אחת)
 
-כבר מוגדר לשלוח ל-tamirmaidani@gmail.com. **בבקשה הראשונה** תקבל מ-FormSubmit מייל "Activate Form" – לחץ **Activate** פעם אחת. מאז כל בקשה מגיעה אליך למייל.
+1. היכנס ל-[web3forms.com](https://web3forms.com), הזן `tamirmaidani@gmail.com` ולחץ **Create Access Key**.
+2. יגיע אליך מייל עם **Access Key** (מחרוזת ארוכה).
+3. ב-GitHub → **Settings → Secrets and variables → Actions → New repository secret**:
+   Name: `WEB3FORMS_ACCESS_KEY`, Secret: המפתח.
+4. בנייה חדשה (push או Actions → Run workflow) – מאז כל בקשה מגיעה אליך למייל.
 
-> אופציונלי: FormSubmit ישלח לך גם מחרוזת אקראית (alias). אפשר לשים אותה ב-`FORMSUBMIT_TARGET` ב-`src/config.js` במקום כתובת המייל, כדי שהמייל שלך לא יופיע בקוד הציבורי.
+> גיבוי: אם Web3Forms לא זמין, האפליקציה מנסה לשלוח דרך FormSubmit. אם שניהם נכשלים – תקבל בטלגרם "⚠️ מייל הבקשה לא נשלח" עם הסיבה.
 
 ## 3. טלגרם אליך – בוט (מומלץ, הכי אמין)
 

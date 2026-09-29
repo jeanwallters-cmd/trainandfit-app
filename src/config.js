@@ -24,6 +24,11 @@ export const ADMIN_URL = 'https://jeanwallters-cmd.github.io/trainandfit-app/adm
 // אחרי האימות אפשר להחליף את הכתובת במחרוזת האקראית ש-FormSubmit שולח, כדי שהמייל לא יופיע בקוד.
 export const FORMSUBMIT_TARGET = ADMIN_EMAIL;
 
+// מייל למנהל – Web3Forms (חינם עד 250 בחודש, הכי אמין). המפתח מגיע מ-GitHub Secret
+// בשם WEB3FORMS_ACCESS_KEY בזמן הבנייה. אם אין מפתח – נעשה שימוש ב-FormSubmit.
+const buildEnv = import.meta.env || {};
+export const WEB3FORMS_KEY = buildEnv.VITE_WEB3FORMS_KEY || '';
+
 // אופציונלי: EmailJS (חינמי עד 200 מיילים בחודש) – לשליחת הקוד למשתמש במייל אוטומטית.
 // אם לא מוגדר, בדף הניהול יש כפתור ששולח את הקוד מהמייל שלך בלחיצה.
 export const emailjs = {
