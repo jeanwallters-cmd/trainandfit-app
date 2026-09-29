@@ -76,7 +76,7 @@ jobs:
 
       # קישור הורדה קבוע: https://github.com/<owner>/<repo>/releases/tag/latest-apk
       - name: Publish latest APK
-        if: github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')
+        if: github.event_name != 'pull_request' && !startsWith(github.ref, 'refs/tags/')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
