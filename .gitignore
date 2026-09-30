@@ -12,7 +12,8 @@ firebase-debug.log
 *.mobileprovision
 *.p8
 keystore.properties
-signing/
+signing/*
+!signing/trainandfit-signing.tar.gz.enc
 
 # local secrets for development
 .env.local

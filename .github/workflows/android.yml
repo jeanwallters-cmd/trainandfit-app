@@ -15,7 +15,6 @@ jobs:
     env:
       VERSION_CODE: ${{ github.run_number }}
       VERSION_NAME: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('2.0.{0}', github.run_number) }}
-      HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -40,19 +39,53 @@ jobs:
           npm run build
           npx cap sync android
 
+      # מפתח החתימה: קובץ מוצפן במאגר (signing/, נוצר ע"י android-keystore.yml) שנפתח בסוד
+      # ANDROID_SIGNING_PASSPHRASE, או – בדרך הישנה – ארבעת סודות ANDROID_KEYSTORE_*.
       - name: Restore release keystore
-        if: env.HAS_KEYSTORE == 'true'
+        env:
+          SIGNING_PASSPHRASE: ${{ secrets.ANDROID_SIGNING_PASSPHRASE }}
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/release.jks"
-          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+          set -euo pipefail
+          ENC=signing/trainandfit-signing.tar.gz.enc
+          if [ -f "$ENC" ] && [ -n "$SIGNING_PASSPHRASE" ]; then
+            DIR="$RUNNER_TEMP/signing"
+            mkdir -p "$DIR"
+            openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 -pass env:SIGNING_PASSPHRASE -in "$ENC" \
+              | tar -C "$DIR" -xzf -
+            prop() { grep "^$1=" "$DIR/keystore.properties" | cut -d= -f2-; }
+            STORE_PW="$(prop storePassword)"; KEY_PW="$(prop keyPassword)"
+            echo "::add-mask::$STORE_PW"; echo "::add-mask::$KEY_PW"
+            {
+              echo "ANDROID_KEYSTORE_PATH=$DIR/trainandfit-release.jks"
+              echo "ANDROID_KEYSTORE_PASSWORD=$STORE_PW"
+              echo "ANDROID_KEY_PASSWORD=$KEY_PW"
+              echo "ANDROID_KEY_ALIAS=$(prop keyAlias)"
+              echo "HAS_KEYSTORE=true"
+            } >> "$GITHUB_ENV"
+          elif [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.jks"
+            {
+              echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.jks"
+              echo "ANDROID_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD"
+              echo "ANDROID_KEY_PASSWORD=$KEY_PASSWORD"
+              echo "ANDROID_KEY_ALIAS=$KEY_ALIAS"
+              echo "HAS_KEYSTORE=true"
+            } >> "$GITHUB_ENV"
+          else
+            if [ -f "$ENC" ]; then
+              echo "::error::signing/ holds the encrypted key but the ANDROID_SIGNING_PASSPHRASE secret is missing."
+              exit 1
+            fi
+            echo "HAS_KEYSTORE=false" >> "$GITHUB_ENV"
+          fi
 
       - name: Build release-signed APK + AAB
         if: env.HAS_KEYSTORE == 'true'
         working-directory: android
-        env:
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           ./gradlew --no-daemon assembleRelease bundleRelease
           APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
