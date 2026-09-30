@@ -197,13 +197,13 @@ window.submitAccessRequest = async function (e) {
 
         watchRequest(ref.id);
         showCloudView('cloudPendingView');
-        window.showToast('הבקשה נשלחה לאישור ✅');
+        window.showToast('הבקשה נשלחה ✅ ניצור איתך קשר לתיאום התשלום');
     } catch (err) {
         console.error(err);
         window.showToast('שליחת הבקשה נכשלה, נסה שוב');
     } finally {
         btn.disabled = false;
-        btn.innerText = 'שלח בקשה לאישור';
+        btn.innerText = 'שלח בקשה';
     }
 };
 

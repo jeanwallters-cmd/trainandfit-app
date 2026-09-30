@@ -66,7 +66,7 @@ function requestCard(id, r, highlighted) {
     const talk = `
         <div class="grid grid-cols-2 gap-2">
             <a href="tel:+${esc(r.phone)}" class="block text-center bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-sm">📞 התקשר</a>
-            <a href="${whatsappLink(r.phone, `היי ${r.name}, קיבלתי את הבקשה שלך לקוד ענן באפליקציית האימונים 🙂`)}" target="_blank" rel="noopener" class="block text-center bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-sm">💬 צ'אט בוואטסאפ</a>
+            <a href="${whatsappLink(r.phone, `היי ${r.name}, קיבלתי את הבקשה שלך לשמירה בענן באפליקציית Train&Fit 🙂\nהשירות בתשלום חד-פעמי של 50 ₪, והמידע שלך נשמר לתמיד. איך נוח לך לשלם?`)}" target="_blank" rel="noopener" class="block text-center bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-sm">💬 צ'אט בוואטסאפ</a>
         </div>`;
     const actions = r.status === 'pending' ? `${talk}
         <div class="flex gap-2">
