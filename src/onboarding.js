@@ -7,9 +7,36 @@ const STEPS = [
     { img: 'step3', title: 'מתאמנים עם טיימר', text: '<b class="text-green-600">מסך ירוק</b> = זמן עבודה. צפצוף ב-3 השניות האחרונות, ותמיד רואים מה הבא בתור.' },
     { img: 'step4', title: 'סיימתם את החזרות?', text: 'בתרגיל לפי חזרות הטיימר מחכה לכם. לוחצים <b>"בוצע!"</b> כדי לעבור הלאה.' },
     { img: 'step5', title: 'מסך אדום = מנוחה', text: 'נושמים ומתכוננים לתרגיל הבא. אפשר <b>להשהות</b> או <b>לסיים</b> את האימון בכל רגע.' },
-    { img: 'step6', title: 'מסך מלא ושמירה מקומית', text: '<b>"מסך מלא"</b> נשאר גם אחרי כיבוי המסך. התוכניות נשמרות במכשיר <b>לשבוע בלבד</b> – מועד האיפוס מופיע למעלה.' },
-    { img: 'step7', title: 'שומרים בענן – לתמיד ☁️', text: 'בתשלום <b>חד-פעמי של 50 ₪</b> – והמידע שלכם נשמר לתמיד. לוחצים <b>"סנכרון ענן"</b> ← <b>"צור גיבוי ענן חדש"</b>, ניצור קשר לתיאום התשלום בוואטסאפ או במייל, ואז תקבלו קוד אישי.' },
+    { img: 'step6', title: 'מסך מלא, בלי הסחות', text: '<b>"מסך מלא"</b> מסתיר את כל ההסחות ונשאר גם אחרי כיבוי והדלקת המסך. בזמן אימון המסך לא נכבה.' },
+    { cards: true, title: 'שתי דרכים לשמור', text: 'בחרו מה שמתאים לכם – אפשר להתחיל בחינם ולעבור לענן מתי שתרצו.' },
+    { img: 'step7', title: 'איך מקבלים שמירה בענן? ☁️', text: 'לוחצים <b>"סנכרון ענן"</b> ← <b>"צור גיבוי ענן חדש"</b> ושולחים בקשה. ניצור קשר לתיאום התשלום (50 ₪) בוואטסאפ או במייל, ואז תקבלו קוד אישי.' },
 ];
+
+const CARDS_HTML = `
+    <div class="w-full space-y-3">
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="font-bold text-lg text-slate-900">📱 שמירה מקומית</h3>
+                <span class="bg-slate-100 text-slate-700 text-xs font-bold px-2.5 py-1 rounded-lg">חינם</span>
+            </div>
+            <ul class="text-sm text-slate-600 space-y-1">
+                <li>✔️ התוכניות נשמרות במכשיר בלבד</li>
+                <li>⏳ <b class="text-slate-900">נמחקות אוטומטית אחרי שבוע</b></li>
+                <li>📅 מועד המחיקה מופיע בראש המסך</li>
+            </ul>
+        </div>
+        <div class="bg-blue-600 text-white rounded-2xl p-4 shadow-lg">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="font-bold text-lg">☁️ שמירה בענן</h3>
+                <span class="bg-white text-blue-700 text-xs font-black px-2.5 py-1 rounded-lg">50 ₪ חד-פעמי</span>
+            </div>
+            <ul class="text-sm text-blue-50 space-y-1">
+                <li>♾️ <b class="text-white">גישה תמידית לתוכניות</b> – לא נמחקות</li>
+                <li>🔄 סנכרון בין כל המכשירים</li>
+                <li>💳 תשלום אחד – בלי מנוי</li>
+            </ul>
+        </div>
+    </div>`;
 
 const root = document.getElementById('onboarding');
 let index = 0;
@@ -26,8 +53,15 @@ function render() {
     root.querySelector('[data-ob="title"]').innerText = s.title;
     root.querySelector('[data-ob="text"]').innerHTML = s.text;
     const img = root.querySelector('[data-ob="img"]');
-    img.src = `./guide/${s.img}.webp`;
-    img.alt = s.title;
+    const cards = root.querySelector('[data-ob="cards"]');
+    img.classList.toggle('hidden', !!s.cards);
+    cards.classList.toggle('hidden', !s.cards);
+    if (s.cards) {
+        cards.innerHTML = CARDS_HTML;
+    } else {
+        img.src = `./guide/${s.img}.webp`;
+        img.alt = s.title;
+    }
     root.querySelector('[data-ob="next"]').innerText = last ? 'בואו נתחיל! 💪' : 'הבא';
     root.querySelector('[data-ob="dots"]').innerHTML = STEPS.map((_, n) =>
         `<span class="h-2 rounded-full transition-all duration-300 ${n === index ? 'w-6 bg-blue-600' : 'w-2 bg-slate-300'}"></span>`).join('');
@@ -64,7 +98,7 @@ if (root) {
         root.remove();
     } else {
         // preload the images so moving between steps is instant
-        STEPS.forEach((s) => { const i = new Image(); i.src = `./guide/${s.img}.webp`; });
+        STEPS.filter((s) => s.img).forEach((s) => { const i = new Image(); i.src = `./guide/${s.img}.webp`; });
         root.querySelector('[data-ob="next"]').addEventListener('click', () => (index === STEPS.length - 1 ? finish() : go(index + 1)));
         root.querySelector('[data-ob="skip"]').addEventListener('click', finish);
         // swipe: in RTL the next step comes from the left, so a finger moving right goes forward
