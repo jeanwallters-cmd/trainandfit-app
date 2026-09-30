@@ -75,11 +75,26 @@
 
 ## 6. Android – חתימה
 
-1. הרץ פעם אחת: `./scripts/generate-android-keystore.sh` (דורש Java). **גבה את `signing/` ואת הסיסמה.**
-2. הוסף ב-GitHub → **Settings → Secrets and variables → Actions** את 4 הערכים שהסקריפט מדפיס:
-   `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`
-3. מעכשיו כל push בונה APK + AAB חתומים, והקישור הקבוע מתעדכן:
-   https://github.com/t-code-now/trainandfit-app/releases/tag/latest-apk
+**דרך א' – מהטלפון, בלי מחשב (workflow חד-פעמי):**
+
+1. צור טוקן: GitHub → **Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token**.
+   Repository access: **Only select repositories** → `trainandfit-app`. Permissions → Repository → **Secrets: Read and write**. תוקף: 7 ימים.
+2. במאגר → **Settings → Secrets and variables → Actions** הוסף:
+   - `SECRETS_ADMIN_TOKEN` = הטוקן משלב 1
+   - `KEYSTORE_BACKUP_PASSPHRASE` = סיסמה ארוכה שתבחר (לפחות 4 מילים). **שמור אותה** – בלעדיה אי אפשר לפתוח את הגיבוי.
+3. Actions → **Android signing key (one-time)** → Run workflow. הוא יוצר את המפתח ושומר ישירות את 4 הסודות
+   `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`.
+   המפתח לא מודפס בלוג (המאגר ציבורי). אם כבר קיים מפתח – הריצה נעצרת ולא דורסת אותו.
+4. **גיבוי:** בעמוד הריצה הורד את `trainandfit-signing-backup-ENCRYPTED` ושמור אותו (למשל ב-Google Drive) – הוא נמחק מ-GitHub אחרי 90 יום.
+   פתיחה (במחשב): `openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 -in trainandfit-signing-backup.tar.gz.enc | tar -xzf -`
+5. מחק את הטוקן (Developer settings) ואת הסוד `SECRETS_ADMIN_TOKEN` – הם לא נחוצים יותר.
+
+**דרך ב' – במחשב:** הרץ `./scripts/generate-android-keystore.sh` (דורש Java), **גבה את `signing/` ואת הסיסמה**, והוסף את 4 הערכים שהוא מדפיס כ-Secrets.
+
+בשתי הדרכים: מעכשיו כל בנייה יוצרת APK + AAB חתומים, והקישור הקבוע מתעדכן:
+https://github.com/t-code-now/trainandfit-app/releases/tag/latest-apk
+
+**המפתח הוא לתמיד:** אם הוא אובד, אי אפשר לעדכן את האפליקציה אצל מי שכבר התקין. מעבר ממפתח debug למפתח קבוע דורש הסרה והתקנה מחדש (פעם אחת).
 
 **התקנה בלי שום אזהרה:** חתימה לבדה לא מבטלת את אזהרת "מקורות לא ידועים" בהתקנת APK מהאינטרנט – זה מנגנון של Android. בלי אזהרות מתקינים רק דרך **Google Play** (חשבון מפתח: 25$ חד-פעמי). מעלים את קובץ ה-AAB למסלול **Internal testing**, והבודקים מתקינים מקישור של החנות.
 
