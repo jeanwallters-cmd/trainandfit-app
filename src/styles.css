@@ -49,3 +49,7 @@
 }
 body { padding-top: var(--sat); }
 #activeWorkoutView { padding-top: var(--sat); padding-bottom: calc(2rem + var(--sab)); }
+
+/* ---- onboarding guide ---- */
+@keyframes ob-fade { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: none; } }
+.ob-enter { animation: ob-fade .35s ease both; }

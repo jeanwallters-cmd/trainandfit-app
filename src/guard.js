@@ -2,6 +2,7 @@
 // ובאמצע אימון הם לא עושים כלום.
 import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
+import { isOnboardingOpen, onboardingBack } from './onboarding.js';
 
 const isHidden = (id) => document.getElementById(id).classList.contains('hidden');
 const workoutActive = () => window.isWorkoutActive && window.isWorkoutActive();
@@ -10,7 +11,9 @@ const WORKOUT_HINT = 'האימון פעיל – לסיום לחץ "סיים אי
 if (Capacitor.isNativePlatform()) {
     // רישום מאזין מבטל את ברירת המחדל (סגירת האפליקציה)
     App.addListener('backButton', () => {
-        if (workoutActive()) {
+        if (isOnboardingOpen()) {
+            onboardingBack();
+        } else if (workoutActive()) {
             window.showToast(WORKOUT_HINT);
         } else if (!isHidden('cloudModal')) {
             window.closeCloudModal();
