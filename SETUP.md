@@ -18,7 +18,7 @@
 1. [Firebase Console](https://console.firebase.google.com/project/trainandfit-2c18c) → **Authentication → Sign-in method**:
    - הפעל **Anonymous** (האפליקציה)
    - הפעל **Google** (הכניסה שלך לפאנל)
-2. **Authentication → Settings → Authorized domains → Add domain**: `jeanwallters-cmd.github.io`
+2. **Authentication → Settings → Authorized domains → Add domain**: `t-code-now.github.io`
 3. **Firestore Database → Rules** – הדבק את כל התוכן של `firestore.rules` ולחץ **Publish**.
    > רק חשבון Google ‏tamirmaidani@gmail.com מוגדר כמנהל. אף אחד אחר לא יכול לאשר או להנפיק קודים.
 
@@ -66,8 +66,8 @@
 ## 5. פאנל הניהול ואתר ה-Web – GitHub Pages
 
 ב-GitHub: **Settings → Pages → Source: GitHub Actions**. מהריצה הבאה של `Web + Firestore rules` האתר עולה אוטומטית:
-- אפליקציה: https://jeanwallters-cmd.github.io/trainandfit-app/
-- פאנל ניהול: https://jeanwallters-cmd.github.io/trainandfit-app/admin.html
+- אפליקציה: https://t-code-now.github.io/trainandfit-app/
+- פאנל ניהול: https://t-code-now.github.io/trainandfit-app/admin.html
 
 אחרי שינוי `src/config.js` – commit + push, וה-APK והאתר נבנים מחדש עם ההגדרות.
 
@@ -79,7 +79,7 @@
 2. הוסף ב-GitHub → **Settings → Secrets and variables → Actions** את 4 הערכים שהסקריפט מדפיס:
    `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`
 3. מעכשיו כל push בונה APK + AAB חתומים, והקישור הקבוע מתעדכן:
-   https://github.com/jeanwallters-cmd/trainandfit-app/releases/tag/latest-apk
+   https://github.com/t-code-now/trainandfit-app/releases/tag/latest-apk
 
 **התקנה בלי שום אזהרה:** חתימה לבדה לא מבטלת את אזהרת "מקורות לא ידועים" בהתקנת APK מהאינטרנט – זה מנגנון של Android. בלי אזהרות מתקינים רק דרך **Google Play** (חשבון מפתח: 25$ חד-פעמי). מעלים את קובץ ה-AAB למסלול **Internal testing**, והבודקים מתקינים מקישור של החנות.
 

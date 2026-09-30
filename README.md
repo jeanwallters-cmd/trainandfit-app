@@ -26,8 +26,8 @@
 | `android/`, `ios/` | הפרויקטים הנייטיביים |
 
 ## הורדה
-- **Android:** https://github.com/jeanwallters-cmd/trainandfit-app/releases/tag/latest-apk
-- **Web + דף אישור:** https://jeanwallters-cmd.github.io/trainandfit-app/
+- **Android:** https://github.com/t-code-now/trainandfit-app/releases/tag/latest-apk
+- **Web + דף אישור:** https://t-code-now.github.io/trainandfit-app/
 
 ## הגדרה
 כל שלבי ההגדרה (Firebase, מייל, וואטסאפ, חתימה) – ב-**[SETUP.md](SETUP.md)**.

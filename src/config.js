@@ -18,7 +18,7 @@ export const ADMIN_EMAIL = 'tamirmaidani@gmail.com';
 export const ADMIN_PHONE = '972528372666';
 
 // כתובת דף האישור (admin.html) – הקישור שמגיע אליך במייל ובוואטסאפ.
-export const ADMIN_URL = 'https://jeanwallters-cmd.github.io/trainandfit-app/admin.html';
+export const ADMIN_URL = 'https://t-code-now.github.io/trainandfit-app/admin.html';
 
 // מייל למנהל – FormSubmit (חינמי, בלי הרשמה). בבקשה הראשונה נשלח אליך מייל אימות חד-פעמי.
 // אחרי האימות אפשר להחליף את הכתובת במחרוזת האקראית ש-FormSubmit שולח, כדי שהמייל לא יופיע בקוד.
