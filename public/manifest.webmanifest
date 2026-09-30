@@ -7,5 +7,12 @@
   "display": "fullscreen",
   "background_color": "#f8fafc",
   "theme_color": "#f8fafc",
-  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+  "icons": [
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
 }
